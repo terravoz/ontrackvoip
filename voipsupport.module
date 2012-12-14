@@ -1,0 +1,7 @@
+<?php
+// $Id$
+/**
+ * @file
+ * Load VoIP Support Scripts.
+ */
+include_once('voipsupport_voip.scripts.inc');

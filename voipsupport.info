@@ -1,0 +1,7 @@
+; $Id$
+core = 7.x
+description = "VoIP Drupal interface to Drupal's support module"
+name = "VoIP Support"
+package = "VoIP Drupal"
+dependencies[] = "voipcall"
+files[] = voipsupport.inc
