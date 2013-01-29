@@ -4,4 +4,3 @@ description = "VoIP Drupal interface to Drupal's support module"
 name = "VoIP Support"
 package = "VoIP Drupal"
 dependencies[] = "voipcall"
-

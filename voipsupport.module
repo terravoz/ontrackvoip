@@ -4,4 +4,203 @@
  * @file
  * Load VoIP Support Scripts.
  */
+include_once('voipsupport.inc');
 include_once('voipsupport_voip.scripts.inc');
+include_once('voipsupport_ahah.inc');
+
+/**
+ * Implements hook_menu()
+ */
+function voipsupport_menu() {
+
+  $items['admin/config/services/voipsupport'] = array(
+    'title' => 'VoIP Support Ontrack settings',
+    'description' => 'VoIP Support Ontrack settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('voipsupport_admin_settings_form'),
+    'access arguments' => array('administer voipsupport configuration'),
+    'type' => MENU_NORMAL_ITEM
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function voipsupport_permission() {
+  return array(
+    'administer voipsupport configuration' => array(
+      'title' => 'administer voipsupport configuration',
+    ),
+  );
+}
+
+function voipsupport_admin_settings_form($form, &$form_state) {
+
+  // Because we have many fields with the same values, we have to set
+  // #tree to be able to access them.
+  $form['#tree'] = TRUE;
+
+  // Build the fieldset with the proper number of textfields.
+  // $form_state['voipsupport_ahah_rows_count'] to determine the number of rows to build.
+  if (empty($form_state['voipsupport_ahah_rows_count'])) {
+    $form_state['voipsupport_ahah_rows_count'] = variable_get('voipsupport_numof_anon_pages', 10);
+  }
+
+  $languages = language_list();
+  foreach($languages as $langcode => $language) {
+    $language_list[$langcode] = $language->name;
+  }
+  for ($i = 0; $i < $form_state['voipsupport_ahah_rows_count']; $i++) {
+    if($i == 0) {
+      $prefix = '<table>';
+    }
+    else {
+      $prefix = '';
+    }
+
+    if (($i+1) == $form_state['voipsupport_ahah_rows_count']) {
+      $suffix = '</table>';
+    }
+    else {
+      $suffix = '';
+    }
+    $form['wrapper']['field']['field_'.$i]['phone'] = array(
+      '#prefix' => $prefix.'<tr><td>',
+      '#title' => t('Phone number'),
+      '#type' => 'textfield',
+      '#default_value' =>  variable_get('voipsupport_phone_'.$i, ''),
+      '#suffix' => '</td>',
+    );
+
+    $form['wrapper']['field']['field_'.$i]['site_id'] = array(
+      '#prefix' => '<td>',
+      '#title' => t('Site ID'),
+      '#type' => 'textfield',
+      '#default_value' =>  variable_get('voipsupport_site_id_'.$i, ''),
+      '#suffix' => '</td>',
+    );
+
+    $form['wrapper']['field']['field_'.$i]['language'] = array(
+      '#prefix' => '<td>',
+      '#title' => t('Language'),
+      '#type' => 'select',
+      '#options' => $language_list,
+      '#default_value' =>  variable_get('voipsupport_language_'.$i, 'en'),
+      '#suffix' => '</td>',
+    );
+
+    $form['wrapper']['field']['field_'.$i]['syntax'] = array(
+      '#prefix' => '<td>',
+      '#title' => t('Syntax'),
+      '#type' => 'select',
+      '#options' => array('embedded' => t('use embedded site id in SMS ticket creation requests'),
+      'retrieve' => t('retrieve site id based on the site telephone number')),
+      '#default_value' =>  variable_get('voipsupport_syntax_'.$i, 'en'),
+      '#suffix' => $suffix.'</td></tr>',
+    );
+  }
+
+  $form['wrapper']['field']['#prefix'] = '<div id="table-page-fieldset-wrapper">';
+  $form['wrapper']['field']['#suffix'] = '</div>';
+
+  $form['wrapper']['voipsupport_ahah_anon_page'] = array(
+    '#type' => 'submit',
+    '#value' => t('Add More'),
+    '#submit' => array('voipsupport_ahah_add_more_anon'),
+    '#ajax' => array(
+      'callback' => 'voipsupport_ahah_add_more_anon_callback',
+      'wrapper' => 'table-page-fieldset-wrapper',
+    ),
+  );
+
+  $form['buttons']['submit'] = array(
+    '#prefix' => '<br>',
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+
+  $form['buttons']['cleanup'] = array(
+    '#type' => 'submit',
+    '#value' => t('Cleanup'),
+  );
+
+  return $form;
+}
+
+
+function voipsupport_admin_settings_form_validate($form, &$form_state) {
+  switch($form_state['clicked_button']['#id']) {
+    case 'edit-buttons-submit':
+      //Validate only if user pressed Save button
+      _voipsupport_admin_settings_validate($form_state);
+      break;
+  }
+}
+
+function _voipsupport_admin_settings_validate(&$form_state) {
+  //@todo: validate site id? validate phone number?
+  $rows = $form_state['values']['wrapper']['field'];
+  $i=0;
+  foreach($rows as $row) {
+    if(($row['phone'] && !$row['site_id']) || (!$row['phone'] && $row['site_id'])) {
+      //If phone is entered without site id or viceversa throw error
+      form_set_error('wrapper][field][field_'.$i, t('You must enter both phone number and site id.'));
+    }
+
+    if($row['site_id'] && !is_numeric($row['site_id'])) {
+      //If site id is not numeric throw error
+      form_set_error('wrapper][field][field_'.$i.'][site_id', t('Site id must be numeric.'));
+    }
+
+    $i++;
+  }
+}
+
+function voipsupport_admin_settings_form_submit($form, &$form_state) {
+  switch($form_state['clicked_button']['#id']) {
+    case 'edit-buttons-submit':
+      //Save button pressed
+      _voipsupport_admin_settings_submit($form_state['values']);
+      break;
+    case 'edit-buttons-cleanup':
+      //Cleanup button pressed
+      _voipsupport_admin_settings_cleanup();
+      break;
+  }
+}
+
+function _voipsupport_admin_settings_submit($values) {
+  //var_dump($values);die();
+  //delete all ontrack site data
+  OnTrackSite::deleteAll();
+  $rows = $values['wrapper']['field'];
+  foreach($rows as $row) {
+    if($row['phone']) {
+      $ontrack_site = new OnTrackSite($row['phone'], $row['site_id'], $row['language'], $row['syntax']);
+      $ontrack_site->save();
+    }
+  }
+  drupal_set_message('OnTrack sites saved sucessfully');
+}
+
+function _voipsupport_admin_settings_cleanup() {
+  //variable_del('blazemeter_anon_visitors');
+
+  drupal_set_message(t('VoIP Support configuration form is reset.'));
+}
+
+function voipsupport_is_ticket_manager($account) {
+  $roles = user_roles(TRUE);
+  $rid = array_search('Ticket Manager', $roles);
+  if (isset($account->roles[$rid])) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+function voipsupport_log($message) {
+  watchdog('voipsupport', $message);
+}
+

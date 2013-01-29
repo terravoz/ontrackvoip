@@ -1,0 +1,58 @@
+<?php
+/**
+ * @file
+ * Install, update and uninstall functions for the voipcall module.
+ *
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function voipsupport_uninstall() {
+
+}
+
+/**
+ * Implements hook_schema().
+ */
+function voipsupport_schema() {
+  /**
+   * ontrack sites table
+   */
+  $schema['ontrack_sites'] = array(
+    'fields' => array(
+      'id' => array(
+        'description' => 'SID',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'site_id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'default' => 0,
+        'not null' => TRUE,
+      ),
+      'phone_number' => array(
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+      'language' => array(
+        'type' => 'varchar',
+        'length' => 12,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'syntax' => array(
+        'type' => 'varchar',
+        'length' => 8,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+  return $schema;
+}
+

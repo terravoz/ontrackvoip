@@ -44,10 +44,17 @@ function voipsupport_voipscript_load_script($script_name, $options = NULL) {
         $text_array[] = $result;
       }
       else {
-        $tmp = wordwrap($result, 160, '\n');
+        /// lets use 154 characters and keep room for message number like (1/10),
+        /// we can have upto 9 parts of the message (9/9)
+        $tmp = wordwrap($result, 154, '\n');
         $text_array = explode('\n', $tmp);
       }
-      foreach ($text_array as $text) {
+      $num_of_msg = count($text_array);
+      foreach ($text_array as $index => $text) {
+        if ($num_of_msg > 1) {
+          $msg_number = ($index + 1);
+          $text = "(".$msg_number."/".$num_of_msg.") ".$text;
+        }
         $script->addSendText($text);
         $script->addLog("sending $text");
       }
@@ -64,10 +71,13 @@ function voipsupport_voipscript_load_script($script_name, $options = NULL) {
 function _voipsupport_sms_process_request($msg, $caller_number, $dest_number) {
   //watchdog('voipsupport', "In _voipsupport_sms_process_request with $msg, $caller_number, $dest_number");
   $help_msg = t("To create new Support Ticket, please text the actual ticket problem description. "
-  ."To get a Support Ticket, please text number of the ticket id ex: 123 or 1 2 3.");
+  ."To get a Support Ticket, please text number of the ticket id (ex: 123, 657, 1298, etc).");
   $msg = trim($msg);
   if (!$msg) {
     $ret = t("Empty request.") . ' ' . $help_msg;
+
+    //log the error
+    voipsupport_log("Empty message received");
   }
   else {
     $request = explode(" ", $msg);
@@ -87,22 +97,24 @@ function _voipsupport_sms_process_request($msg, $caller_number, $dest_number) {
         $ticket = ontrack_get_ticket($ticket_id);
 
         if(!$ticket) {
-          $ret = t("Ticket !ticket_id doesn't exists.",
+          $ret = t("OnTrack La Paz. Invalid ticket id !ticket_id. Please try again with a different one.",
             array('!ticket_id' => $ticket_id));
+
+          //log the error
+          voipsupport_log($ticket_id . " is not a valid ticket");
         }
-        else if($ticket->uid == $author_uid || user_access("ontrack access all tickets", $author)) {
+        else if($ticket->uid == $author_uid || voipsupport_is_ticket_manager($author)) {
           //the following users might have permission to check a given ticket:
           //a) the user calling from the phone number that created the ticket
-          //b) users with the "ontrack access all tickets" permission
-
-          //@todo: state is numeric field, must be translated into string
-          $ret = t("Ticket !ticket_id status is !ticket_state",
-          array('!ticket_id' => $ticket_id, '!ticket_state' => _support_state($ticket->state)));
-
+          //b) users with the "Ticket Manager" role
+          $ret = t("Ticket !ticket_id status: !ticket_state.",
+          array('!ticket_id' => $ticket_id, '!ticket_state' => ontrack_get_ticket_status_description_from_code($ticket->state)));
         }
         else {
-          $ret = t("You don't have permission to view ticket !ticket_id",
+          $ret = t("OnTrack La Paz. You are not authorized to access ticket !ticket_id. For additional information, please contact XXX.",
           array('!ticket_id' => $ticket_id));
+          //log the error
+          voipsupport_log("Unauthorized access attempted by ".$caller_number . " for ticket " . $ticket_id);
         }
       }
       else{
@@ -126,15 +138,20 @@ function _voipsupport_sms_process_request($msg, $caller_number, $dest_number) {
           else {
             //Invalid site id
             //@todo: replace XXX with contact number
-            $ret = t("OnTrack La Paz. !site_id is not a valid OnTrack site"
-            ." identifier. Please contact XXX for additional information",
+            $ret = t("OnTrack La Paz. !site_id is not a valid site"
+            ." identifier. Please contact XXX for additional information.",
             array('!site_id' => $site_id));
+
+            //log the error
+            voipsupport_log($site_id . " is not a valid site");
           }
         }
         else {
           //Missing site id
           //@todo: check if its site specific phone number, then we determine site_id from destination number
           $ret = t("Missing site id.") . ' ' . $help_msg;
+          //log the error
+          voipsupport_log("Message with invalid request received. Message content: ".print_r($msg, true));
         }
       }
     }
@@ -143,6 +160,7 @@ function _voipsupport_sms_process_request($msg, $caller_number, $dest_number) {
 }
 
 /*Create voipsupport ticket*/
+if(variable_get('voipsupport_demo', FALSE)) {
 function ontrack_create_ticket_from_sms($site_id, $ticket_text, $caller_number) {
   watchdog('voipsupport', "New ticket for site id: $site_id from number: $caller_number text: $ticket_text");
   $ticket_id = rand(1,1000);
@@ -150,6 +168,9 @@ function ontrack_create_ticket_from_sms($site_id, $ticket_text, $caller_number) 
 }
 
 function ontrack_get_ticket($ticket_id) {
+  if($ticket_id > 1000) {
+    return NULL;
+  }
   $ticket->title = 'title';
   $ticket->body[LANGUAGE_NONE][] = array (
     'value' => 'Hello world ticket.',
@@ -196,4 +217,10 @@ function ontrack_get_site_list() {
   }
 
   return $sites;
+}
+
+function ontrack_get_ticket_status_description_from_code($state) {
+  return 'New';
+}
+
 }
