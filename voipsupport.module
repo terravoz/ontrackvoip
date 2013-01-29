@@ -12,12 +12,11 @@ include_once('voipsupport_ahah.inc');
  * Implements hook_menu()
  */
 function voipsupport_menu() {
-
   $items['admin/config/voipsupport'] = array(
     'title' => 'OnTrack VoIP Support',
     'description' => 'OnTrack VoIP Support settings',
-    'page callback' => 'blazemeter_admin_menu_block_page',
-    'access arguments' => array('administer blazemeter configuration'),
+    'page callback' => 'voipsupport_admin_menu_block_page',
+    'access arguments' => array('administer voipsupport configuration'),
   );
 
   $items['admin/config/voipsupport/voipsupport'] = array(
@@ -41,6 +40,10 @@ function voipsupport_permission() {
       'title' => 'administer voipsupport configuration',
     ),
   );
+}
+
+function voipsupport_admin_menu_block_page() {
+  drupal_goto('admin/config/voipsupport/voipsupport');
 }
 
 function voipsupport_admin_settings_form($form, &$form_state) {
