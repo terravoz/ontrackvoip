@@ -2,29 +2,29 @@
 // $Id$
 /**
  * @file
- * Load VoIP Support Scripts.
+ * Load OnTrack VoIP Scripts.
  */
-include_once('voipsupport.inc');
-include_once('voipsupport_voip.scripts.inc');
-include_once('voipsupport_ahah.inc');
+include_once('ontrackvoip.inc');
+include_once('ontrackvoip_voip.scripts.inc');
+include_once('ontrackvoip_ahah.inc');
 
 /**
  * Implements hook_menu()
  */
-function voipsupport_menu() {
-  $items['admin/config/voipsupport'] = array(
-    'title' => 'OnTrack VoIP Support',
-    'description' => 'OnTrack VoIP Support settings',
-    'page callback' => 'voipsupport_admin_menu_block_page',
-    'access arguments' => array('administer voipsupport configuration'),
+function ontrackvoip_menu() {
+  $items['admin/config/ontrackvoip'] = array(
+    'title' => 'OnTrack OnTrack VoIP',
+    'description' => 'OnTrack OnTrack VoIP settings',
+    'page callback' => 'ontrackvoip_admin_menu_block_page',
+    'access arguments' => array('administer ontrackvoip configuration'),
   );
 
-  $items['admin/config/voipsupport/voipsupport'] = array(
-    'title' => 'OnTrack VoIP Support',
-    'description' => 'VoIP Support Ontrack settings.',
+  $items['admin/config/ontrackvoip/ontrackvoip'] = array(
+    'title' => 'OnTrack OnTrack VoIP',
+    'description' => 'OnTrack VoIP Ontrack settings.',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('voipsupport_admin_settings_form'),
-    'access arguments' => array('administer voipsupport configuration'),
+    'page arguments' => array('ontrackvoip_admin_settings_form'),
+    'access arguments' => array('administer ontrackvoip configuration'),
     'type' => MENU_NORMAL_ITEM
   );
 
@@ -34,19 +34,19 @@ function voipsupport_menu() {
 /**
  * Implements hook_permission().
  */
-function voipsupport_permission() {
+function ontrackvoip_permission() {
   return array(
-    'administer voipsupport configuration' => array(
-      'title' => 'administer voipsupport configuration',
+    'administer ontrackvoip configuration' => array(
+      'title' => 'administer ontrackvoip configuration',
     ),
   );
 }
 
-function voipsupport_admin_menu_block_page() {
-  drupal_goto('admin/config/voipsupport/voipsupport');
+function ontrackvoip_admin_menu_block_page() {
+  drupal_goto('admin/config/ontrackvoip/ontrackvoip');
 }
 
-function voipsupport_admin_settings_form($form, &$form_state) {
+function ontrackvoip_admin_settings_form($form, &$form_state) {
 
   $form['wrapper']['description'] = array(
     '#type' => 'markup',
@@ -60,10 +60,10 @@ function voipsupport_admin_settings_form($form, &$form_state) {
   $form['#tree'] = TRUE;
 
   // Build the fieldset with the proper number of textfields.
-  // $form_state['voipsupport_ahah_rows_count'] to determine the number of rows to build.
-  if (empty($form_state['voipsupport_ahah_rows_count'])) {
+  // $form_state['ontrackvoip_ahah_rows_count'] to determine the number of rows to build.
+  if (empty($form_state['ontrackvoip_ahah_rows_count'])) {
     $num_of_sites = count($ontrack_sites);
-    $form_state['voipsupport_ahah_rows_count'] = ($num_of_sites > 10) ? $num_of_sites : 10;
+    $form_state['ontrackvoip_ahah_rows_count'] = ($num_of_sites > 10) ? $num_of_sites : 10;
   }
 
   //Build language list from Locale enabled languages
@@ -81,7 +81,7 @@ function voipsupport_admin_settings_form($form, &$form_state) {
   }
 
   //Build form table
-  for ($i = 0; $i < $form_state['voipsupport_ahah_rows_count']; $i++) {
+  for ($i = 0; $i < $form_state['ontrackvoip_ahah_rows_count']; $i++) {
     if($i == 0) {
       $prefix = '<table>';
     }
@@ -91,7 +91,7 @@ function voipsupport_admin_settings_form($form, &$form_state) {
 
     $ontrack_site = (isset($ontrack_sites[$i])) ? $ontrack_sites[$i] : NULL;
 
-    if (($i+1) == $form_state['voipsupport_ahah_rows_count']) {
+    if (($i+1) == $form_state['ontrackvoip_ahah_rows_count']) {
       $suffix = '</table>';
     }
     else {
@@ -137,12 +137,12 @@ function voipsupport_admin_settings_form($form, &$form_state) {
   $form['wrapper']['field']['#prefix'] = '<div id="table-page-fieldset-wrapper">';
   $form['wrapper']['field']['#suffix'] = '</div>';
 
-  $form['wrapper']['voipsupport_ahah_anon_page'] = array(
+  $form['wrapper']['ontrackvoip_ahah_anon_page'] = array(
     '#type' => 'submit',
     '#value' => t('Add More'),
-    '#submit' => array('voipsupport_ahah_add_more_anon'),
+    '#submit' => array('ontrackvoip_ahah_add_more_anon'),
     '#ajax' => array(
-      'callback' => 'voipsupport_ahah_add_more_anon_callback',
+      'callback' => 'ontrackvoip_ahah_add_more_anon_callback',
       'wrapper' => 'table-page-fieldset-wrapper',
     ),
   );
@@ -162,16 +162,16 @@ function voipsupport_admin_settings_form($form, &$form_state) {
 }
 
 
-function voipsupport_admin_settings_form_validate($form, &$form_state) {
+function ontrackvoip_admin_settings_form_validate($form, &$form_state) {
   switch($form_state['clicked_button']['#id']) {
     case 'edit-buttons-submit':
       //Validate only if user pressed Save button
-      _voipsupport_admin_settings_validate($form_state);
+      _ontrackvoip_admin_settings_validate($form_state);
       break;
   }
 }
 
-function _voipsupport_admin_settings_validate(&$form_state) {
+function _ontrackvoip_admin_settings_validate(&$form_state) {
   $rows = $form_state['values']['wrapper']['field'];
   $i=0;
   foreach($rows as $row) {
@@ -207,20 +207,20 @@ function _voipsupport_admin_settings_validate(&$form_state) {
   }
 }
 
-function voipsupport_admin_settings_form_submit($form, &$form_state) {
+function ontrackvoip_admin_settings_form_submit($form, &$form_state) {
   switch($form_state['clicked_button']['#id']) {
     case 'edit-buttons-submit':
       //Save button pressed
-      _voipsupport_admin_settings_submit($form_state['values']);
+      _ontrackvoip_admin_settings_submit($form_state['values']);
       break;
     case 'edit-buttons-cleanup':
       //Cleanup button pressed
-      _voipsupport_admin_settings_cleanup();
+      _ontrackvoip_admin_settings_cleanup();
       break;
   }
 }
 
-function _voipsupport_admin_settings_submit($values) {
+function _ontrackvoip_admin_settings_submit($values) {
   //var_dump($values);die();
   //delete all ontrack site data
   OnTrackSite::deleteAll();
@@ -234,13 +234,13 @@ function _voipsupport_admin_settings_submit($values) {
   drupal_set_message('OnTrack sites saved sucessfully');
 }
 
-function _voipsupport_admin_settings_cleanup() {
+function _ontrackvoip_admin_settings_cleanup() {
   //variable_del('blazemeter_anon_visitors');
 
-  drupal_set_message(t('VoIP Support configuration form is reset.'));
+  drupal_set_message(t('OnTrack VoIP configuration form is reset.'));
 }
 
-function voipsupport_is_ticket_manager($account) {
+function ontrackvoip_is_ticket_manager($account) {
   $roles = user_roles(TRUE);
   $rid = array_search('Ticket Manager', $roles);
   if (isset($account->roles[$rid])) {
@@ -249,7 +249,7 @@ function voipsupport_is_ticket_manager($account) {
   return FALSE;
 }
 
-function voipsupport_log($message) {
-  watchdog('voipsupport', $message);
+function ontrackvoip_log($message) {
+  watchdog('ontrackvoip', $message);
 }
 

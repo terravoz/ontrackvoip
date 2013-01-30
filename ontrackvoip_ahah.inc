@@ -5,8 +5,8 @@
  *
  * Increments the max counter and causes a rebuild.
  */
-function voipsupport_ahah_add_more_anon($form, &$form_state) {
-  $form_state['voipsupport_ahah_rows_count']++;
+function ontrackvoip_ahah_add_more_anon($form, &$form_state) {
+  $form_state['ontrackvoip_ahah_rows_count']++;
   $form_state['rebuild'] = TRUE;
 }
 
@@ -15,7 +15,7 @@ function voipsupport_ahah_add_more_anon($form, &$form_state) {
  *
  * Returns the anon page textfields
  */
-function voipsupport_ahah_add_more_anon_callback($form, $form_state) {
+function ontrackvoip_ahah_add_more_anon_callback($form, $form_state) {
   return $form['wrapper']['field'];
 }
 

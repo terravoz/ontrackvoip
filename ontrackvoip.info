@@ -1,0 +1,6 @@
+; $Id$
+core = 7.x
+description = "OnTrack VoIP Drupal integration"
+name = "OnTrack VoIP"
+package = "VoIP Drupal"
+dependencies[] = "voipcall"

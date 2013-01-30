@@ -8,14 +8,14 @@
 /**
  * Implements hook_uninstall().
  */
-function voipsupport_uninstall() {
+function ontrackvoip_uninstall() {
 
 }
 
 /**
  * Implements hook_schema().
  */
-function voipsupport_schema() {
+function ontrackvoip_schema() {
   /**
    * ontrack sites table
    */

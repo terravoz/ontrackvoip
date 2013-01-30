@@ -3,25 +3,25 @@
 /**
  * Implementation of hook_voipscript_get_script_names()
  */
-function voipsupport_voipscript_get_script_names() {
-  //$script_names[] = 'voipsupport_main_menu_script';
-  $script_names[] = 'voipsupport_sms_handler_script';
+function ontrackvoip_voipscript_get_script_names() {
+  //$script_names[] = 'ontrackvoip_main_menu_script';
+  $script_names[] = 'ontrackvoip_sms_handler_script';
   return $script_names;
 }
 
 /**
  * Implementation of hook_voipscript_load_script()
  */
-function voipsupport_voipscript_load_script($script_name, $options = NULL) {
+function ontrackvoip_voipscript_load_script($script_name, $options = NULL) {
 
   $script = NULL;
   switch ($script_name) {
     default:
       break;
 
-    case 'voipsupport_sms_handler_script':
-      //VoIP Support script for Text channel
-      $script = new VoipScript('voipsupport_sms_handler_script');
+    case 'ontrackvoip_sms_handler_script':
+      //OnTrack VoIP script for Text channel
+      $script = new VoipScript('ontrackvoip_sms_handler_script');
       // log the sms
       $log_msg = t("SMS from %caller_number on @date (id: %call_id)",
         array('@date' => format_date(time())));
@@ -31,14 +31,15 @@ function voipsupport_voipscript_load_script($script_name, $options = NULL) {
       $options['text'] = '%inbound_text_contents';
       $options['caller_number'] = '%caller_number';
       $options['dest_number'] = '%dest_number';
+      $options['call_id'] = '%cid';
       $options['language'] = 'en';
-      $script->addGosub('voipsupport_sms_process_request_script', $options);
+      $script->addGosub('ontrackvoip_sms_process_request_script', $options);
       break;
 
-    case 'voipsupport_sms_process_request_script':
+    case 'ontrackvoip_sms_process_request_script':
       //Helper script to process SMS request
-      $script = new VoipScript('voipsupport_sms_process_request_script');
-      $result = _voipsupport_sms_process_request($options['text'], $options['caller_number'], $options['dest_number']);
+      $script = new VoipScript('ontrackvoip_sms_process_request_script');
+      $result = _ontrackvoip_sms_process_request($options['text'], $options['caller_number'], $options['dest_number'], $options['call_id']);
       // send response in chunks of 160 characteres
       if (strlen($result) <= 160) {
         $text_array[] = $result;
@@ -68,8 +69,8 @@ function voipsupport_voipscript_load_script($script_name, $options = NULL) {
 /**
  * Process incoming SMS messages
  */
-function _voipsupport_sms_process_request($msg, $caller_number, $dest_number) {
-  watchdog('voipsupport', "In _voipsupport_sms_process_request with $msg, $caller_number, $dest_number");
+function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $call_id) {
+  //watchdog('ontrackvoip', "In _ontrackvoip_sms_process_request with $msg, $caller_number, $dest_number");
   //@todo: remove when we have working languages UI
   $langcode = variable_get('ontrack_voip_language', 'es');
 
@@ -85,7 +86,7 @@ function _voipsupport_sms_process_request($msg, $caller_number, $dest_number) {
     $ret = t("Empty request.", array(), array('langcode' => $langcode)) . ' ' . $help_msg;
 
     //log the error
-    voipsupport_log("Empty message received");
+    ontrackvoip_log("Empty message received. Call ID: ".$call_id);
   }
   else {
     $request = explode(" ", $msg);
@@ -116,9 +117,9 @@ function _voipsupport_sms_process_request($msg, $caller_number, $dest_number) {
         );
 
           //log the error
-          voipsupport_log($ticket_id . " is not a valid ticket");
+          ontrackvoip_log($ticket_id . " is not a valid ticket. Call ID: ".$call_id);
         }
-        else if($ticket->uid == $author_uid || voipsupport_is_ticket_manager($author)) {
+        else if($ticket->uid == $author_uid || ontrackvoip_is_ticket_manager($author)) {
           //the following users might have permission to check a given ticket:
           //a) the user calling from the phone number that created the ticket
           //b) users with the "Ticket Manager" role
@@ -141,59 +142,10 @@ function _voipsupport_sms_process_request($msg, $caller_number, $dest_number) {
             )
           );
           //log the error
-          voipsupport_log("Unauthorized access attempted by ".$caller_number . " for ticket " . $ticket_id);
+          ontrackvoip_log("Unauthorized access attempted by ".$caller_number . " for ticket " . $ticket_id.". Call ID: ".$call_id);
         }
       }
       else{
-        /*
-        //Else this is CREATE request
-        $request = explode(" ", $msg);
-        //Get array of valid site_ids for this SMS number
-        $valid_site_ids = OnTrackSite::getSiteIds($dest_number);
-        //Check if this SMS has embedded site id in its body
-        $site_id = $request[0];
-        if (is_numeric($site_id)) {
-          //SMS syntax: embedded site id
-          //Check if site_id is valid
-          if (isset($valid_site_ids[$site_id])) {
-            //Load site object for further info like language, site name,...
-            $ontrack_site = OnTrackSite::getSite($site_id, $dest_number);
-            //Create new ticket
-            unset($request[0]); //remove site_id from ticket_text
-            $ticket_text = implode(" ", $request);
-            $ret = voipsupport_create_ticket($ontrack_site, $ticket_text, $caller_number);
-          }
-          else {
-            //Invalid site id
-            //@todo: replace XXX with contact number
-            $ret = t("!site_id is not a valid site"
-            ." identifier. Please contact XXX for additional information.",
-            array('!site_id' => $site_id));
-
-            //log the error
-            voipsupport_log($site_id . " is not a valid site");
-          }
-        }
-        else {
-          //Missing site id
-          if (count($valid_site_ids) == 1) {
-            //There is just one matching site for this SMS number, check
-            //if its using retrieve SMS syntax
-            $site_id = reset($valid_site_ids);
-            $ontrack_site = OnTrackSite::getSite($site_id, $dest_number);
-            if ($ontrack_site->getSyntax() == 'retrieve') {
-              //This SMS number is set to retrieve id from dest_number so create ticket
-              $ticket_text = $msg;
-              $ret = voipsupport_create_ticket($ontrack_site, $ticket_text, $caller_number);
-            }
-          }
-
-          if(!$ret) {
-            $ret = t("Missing site id.") . ' ' . $help_msg;
-            //log the error
-            voipsupport_log("Message with invalid request received. Message content: ".print_r($msg, true));
-          }
-        }*/
         //Else this is CREATE request
         //Get array of valid site_ids for this SMS number
         $valid_site_ids = OnTrackSite::getSiteIds($dest_number);
@@ -205,7 +157,7 @@ function _voipsupport_sms_process_request($msg, $caller_number, $dest_number) {
           if ($ontrack_site->getSyntax() == 'retrieve') {
             //This SMS number is set to retrieve id from dest_number so create ticket
             $ticket_text = $msg;
-            $ret = voipsupport_create_ticket($ontrack_site, $ticket_text, $caller_number);
+            $ret = ontrackvoip_create_ticket($ontrack_site, $ticket_text, $caller_number);
             return $ret;
           }
         }
@@ -222,7 +174,7 @@ function _voipsupport_sms_process_request($msg, $caller_number, $dest_number) {
             //Create new ticket
             unset($request[0]); //remove site_id from ticket_text
             $ticket_text = implode(" ", $request);
-            $ret = voipsupport_create_ticket($ontrack_site, $ticket_text, $caller_number);
+            $ret = ontrackvoip_create_ticket($ontrack_site, $ticket_text, $caller_number);
           }
           else {
             //Invalid site id
@@ -238,7 +190,7 @@ function _voipsupport_sms_process_request($msg, $caller_number, $dest_number) {
             );
 
             //log the error
-            voipsupport_log($site_id . " is not a valid site");
+            ontrackvoip_log($site_id . " is not a valid site. Call ID: ".$call_id);
           }
         }
         else {
@@ -246,7 +198,7 @@ function _voipsupport_sms_process_request($msg, $caller_number, $dest_number) {
           if(!$ret) {
             $ret = t("Missing site id.", array(), array('langcode' => $langcode)) . ' ' . $help_msg;
             //log the error
-            voipsupport_log("Message with invalid request received. Message content: ".print_r($msg, true));
+            ontrackvoip_log("Message with invalid request received. Message content: ".print_r($msg, true)." Call ID: ".$call_id);
           }
         }
       }
@@ -255,11 +207,11 @@ function _voipsupport_sms_process_request($msg, $caller_number, $dest_number) {
   return $ret;
 }
 
-function voipsupport_create_ticket($ontrack_site, $ticket_text, $caller_number) {
+function ontrackvoip_create_ticket($ontrack_site, $ticket_text, $caller_number) {
   $langcode = $ontrack_site->getLanguage();
   $site_name = $ontrack_site->getSiteName();
   $site_id = $ontrack_site->getSiteId();
-  watchdog('voipsupport', "Using language $langcode");
+  watchdog('ontrackvoip', "Using language $langcode");
 
   //Create new ticket
   $ticket_id = ontrack_create_ticket_from_sms($site_id, $ticket_text, $caller_number);
@@ -275,10 +227,10 @@ function voipsupport_create_ticket($ontrack_site, $ticket_text, $caller_number) 
 
   return $ret;
 }
-/*Create voipsupport ticket*/
-if(variable_get('voipsupport_demo', FALSE)) {
+/*Create ontrackvoip ticket*/
+if(variable_get('ontrackvoip_demo', FALSE)) {
 function ontrack_create_ticket_from_sms($site_id, $ticket_text, $caller_number) {
-  watchdog('voipsupport', "New ticket for site id: $site_id from number: $caller_number text: $ticket_text");
+  watchdog('ontrackvoip', "New ticket for site id: $site_id from number: $caller_number text: $ticket_text");
   $ticket_id = rand(1,1000);
   return $ticket_id;
 }
