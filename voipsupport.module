@@ -48,6 +48,13 @@ function voipsupport_admin_menu_block_page() {
 
 function voipsupport_admin_settings_form($form, &$form_state) {
 
+  $form['wrapper']['description'] = array(
+    '#type' => 'markup',
+    '#markup' => '<div><b>Phone number: </b><span>Number must be in <a target="_blank" href="http://en.wikipedia.org/wiki/E.164">E.164</a> format.
+    Supported formats include: +14155551212 for a US</span></div>',
+  );
+  //Load existing Ontrack sites
+  $ontrack_sites = OnTrackSite::load();
   // Because we have many fields with the same values, we have to set
   // #tree to be able to access them.
   $form['#tree'] = TRUE;
@@ -55,13 +62,25 @@ function voipsupport_admin_settings_form($form, &$form_state) {
   // Build the fieldset with the proper number of textfields.
   // $form_state['voipsupport_ahah_rows_count'] to determine the number of rows to build.
   if (empty($form_state['voipsupport_ahah_rows_count'])) {
-    $form_state['voipsupport_ahah_rows_count'] = variable_get('voipsupport_numof_anon_pages', 10);
+    $num_of_sites = count($ontrack_sites);
+    $form_state['voipsupport_ahah_rows_count'] = ($num_of_sites > 10) ? $num_of_sites : 10;
   }
 
+  //Build language list from Locale enabled languages
   $languages = language_list();
   foreach($languages as $langcode => $language) {
     $language_list[$langcode] = $language->name;
   }
+
+  //Build site list from ontrack_get_site_list
+  //@todo: verify ontrack syntax
+  $sites = ontrack_get_site_list();
+  $site_list[''] = '<none>';
+  foreach($sites as $site_id => $site) {
+    $site_list[$site_id] = "$site->name (Site ID:$site_id)";
+  }
+
+  //Build form table
   for ($i = 0; $i < $form_state['voipsupport_ahah_rows_count']; $i++) {
     if($i == 0) {
       $prefix = '<table>';
@@ -69,6 +88,8 @@ function voipsupport_admin_settings_form($form, &$form_state) {
     else {
       $prefix = '';
     }
+
+    $ontrack_site = (isset($ontrack_sites[$i])) ? $ontrack_sites[$i] : NULL;
 
     if (($i+1) == $form_state['voipsupport_ahah_rows_count']) {
       $suffix = '</table>';
@@ -80,15 +101,16 @@ function voipsupport_admin_settings_form($form, &$form_state) {
       '#prefix' => $prefix.'<tr><td>',
       '#title' => t('Phone number'),
       '#type' => 'textfield',
-      '#default_value' =>  variable_get('voipsupport_phone_'.$i, ''),
+      '#default_value' => (isset($ontrack_site)) ? $ontrack_site->getPhoneNumber() : '',
       '#suffix' => '</td>',
     );
 
     $form['wrapper']['field']['field_'.$i]['site_id'] = array(
       '#prefix' => '<td>',
       '#title' => t('Site ID'),
-      '#type' => 'textfield',
-      '#default_value' =>  variable_get('voipsupport_site_id_'.$i, ''),
+      '#type' => 'select',
+      '#options' => $site_list,
+      '#default_value' => (isset($ontrack_site)) ? $ontrack_site->getSiteId() : '',
       '#suffix' => '</td>',
     );
 
@@ -97,17 +119,17 @@ function voipsupport_admin_settings_form($form, &$form_state) {
       '#title' => t('Language'),
       '#type' => 'select',
       '#options' => $language_list,
-      '#default_value' =>  variable_get('voipsupport_language_'.$i, 'en'),
+      '#default_value' => (isset($ontrack_site)) ? $ontrack_site->getLanguage() : 'en',
       '#suffix' => '</td>',
     );
 
     $form['wrapper']['field']['field_'.$i]['syntax'] = array(
       '#prefix' => '<td>',
-      '#title' => t('Syntax'),
+      '#title' => t('SMS Syntax'),
       '#type' => 'select',
       '#options' => array('embedded' => t('use embedded site id in SMS ticket creation requests'),
       'retrieve' => t('retrieve site id based on the site telephone number')),
-      '#default_value' =>  variable_get('voipsupport_syntax_'.$i, 'en'),
+      '#default_value' => (isset($ontrack_site)) ? $ontrack_site->getSyntax() : '',
       '#suffix' => $suffix.'</td></tr>',
     );
   }
@@ -150,7 +172,6 @@ function voipsupport_admin_settings_form_validate($form, &$form_state) {
 }
 
 function _voipsupport_admin_settings_validate(&$form_state) {
-  //@todo: validate site id? validate phone number?
   $rows = $form_state['values']['wrapper']['field'];
   $i=0;
   foreach($rows as $row) {
@@ -164,7 +185,25 @@ function _voipsupport_admin_settings_validate(&$form_state) {
       form_set_error('wrapper][field][field_'.$i.'][site_id', t('Site id must be numeric.'));
     }
 
+    //Build array of phone numbers to check if one is repeated more than once
+    if($row['phone']) {
+      if(!isset($phone_numbers[$row['phone']])) {
+        $phone_numbers[$row['phone']] = 0;
+      }
+      $phone_numbers[$row['phone']]++;
+    }
     $i++;
+  }
+
+  //Loop again, this time check if retrieve sms syntax option is enabled for any
+  //number which shows of twice or more on form.
+  foreach($rows as $id => $row) {
+    if($row['phone'] && $row['syntax'] == 'retrieve') {
+      if($phone_numbers[$row['phone']] > 1) {
+        //We can't have retrieve SMS syntax for phone numbers used in multiple site ids
+        form_set_error('wrapper][field]['.$id.'][syntax', t('Retrieve SMS syntax can\'t be used when phone number is used in multiple site ids.'));
+      }
+    }
   }
 }
 

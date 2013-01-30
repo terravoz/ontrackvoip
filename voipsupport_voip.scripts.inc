@@ -69,12 +69,20 @@ function voipsupport_voipscript_load_script($script_name, $options = NULL) {
  * Process incoming SMS messages
  */
 function _voipsupport_sms_process_request($msg, $caller_number, $dest_number) {
-  //watchdog('voipsupport', "In _voipsupport_sms_process_request with $msg, $caller_number, $dest_number");
+  watchdog('voipsupport', "In _voipsupport_sms_process_request with $msg, $caller_number, $dest_number");
+  //@todo: remove when we have working languages UI
+  $langcode = variable_get('ontrack_voip_language', 'es');
+
   $help_msg = t("To create new Support Ticket, please text the actual ticket problem description. "
-  ."To get a Support Ticket, please text number of the ticket id (ex: 123, 657, 1298, etc).");
+    ."To get a Support Ticket, please text number of the ticket id (ex: 123, 657, 1298, etc).",
+    array(),
+    array(
+      'langcode' => $langcode
+    )
+  );
   $msg = trim($msg);
-  if (!$msg) {
-    $ret = t("Empty request.") . ' ' . $help_msg;
+  if ($msg == '') {
+    $ret = t("Empty request.", array(), array('langcode' => $langcode)) . ' ' . $help_msg;
 
     //log the error
     voipsupport_log("Empty message received");
@@ -95,10 +103,17 @@ function _voipsupport_sms_process_request($msg, $caller_number, $dest_number) {
         $author_uid = ontrack_get_uid_from_phone($caller_number);
         $author = user_load($author_uid);
         $ticket = ontrack_get_ticket($ticket_id);
+        //@todo: get site id from ticket
 
         if(!$ticket) {
           $ret = t("OnTrack La Paz. Invalid ticket id !ticket_id. Please try again with a different one.",
-            array('!ticket_id' => $ticket_id));
+            array(
+              '!ticket_id' => $ticket_id
+            ),
+            array(
+              'langcode' => $langcode
+            )
+        );
 
           //log the error
           voipsupport_log($ticket_id . " is not a valid ticket");
@@ -108,37 +123,50 @@ function _voipsupport_sms_process_request($msg, $caller_number, $dest_number) {
           //a) the user calling from the phone number that created the ticket
           //b) users with the "Ticket Manager" role
           $ret = t("Ticket !ticket_id status: !ticket_state.",
-          array('!ticket_id' => $ticket_id, '!ticket_state' => ontrack_get_ticket_status_description_from_code($ticket->state)));
+            array(
+              '!ticket_id' => $ticket_id,
+              '!ticket_state' => ontrack_get_ticket_status_description_from_code($ticket->state)
+            ),
+            array(
+              'langcode' => $langcode
+            ));
         }
         else {
           $ret = t("OnTrack La Paz. You are not authorized to access ticket !ticket_id. For additional information, please contact XXX.",
-          array('!ticket_id' => $ticket_id));
+            array(
+              '!ticket_id' => $ticket_id
+            ),
+            array(
+              'langcode' => $langcode
+            )
+          );
           //log the error
           voipsupport_log("Unauthorized access attempted by ".$caller_number . " for ticket " . $ticket_id);
         }
       }
       else{
+        /*
         //Else this is CREATE request
         $request = explode(" ", $msg);
-        $site_id = $request[0]; //First word in SMS should be site id
-
+        //Get array of valid site_ids for this SMS number
+        $valid_site_ids = OnTrackSite::getSiteIds($dest_number);
+        //Check if this SMS has embedded site id in its body
+        $site_id = $request[0];
         if (is_numeric($site_id)) {
-          //Get array of site objects
-          $sites = ontrack_get_site_list();
-          //Check if site_id exists
-          if (isset($sites[$site_id])) {
+          //SMS syntax: embedded site id
+          //Check if site_id is valid
+          if (isset($valid_site_ids[$site_id])) {
+            //Load site object for further info like language, site name,...
+            $ontrack_site = OnTrackSite::getSite($site_id, $dest_number);
             //Create new ticket
             unset($request[0]); //remove site_id from ticket_text
             $ticket_text = implode(" ", $request);
-            $ticket_id = ontrack_create_ticket_from_sms($site_id, $ticket_text, $caller_number);
-            $ret = t("OnTrack La Paz. New ticket created with id !ticket_id. "
-              ."Please use that id in further inquiries about this ticket.",
-              array('!ticket_id' => $ticket_id));
+            $ret = voipsupport_create_ticket($ontrack_site, $ticket_text, $caller_number);
           }
           else {
             //Invalid site id
             //@todo: replace XXX with contact number
-            $ret = t("OnTrack La Paz. !site_id is not a valid site"
+            $ret = t("!site_id is not a valid site"
             ." identifier. Please contact XXX for additional information.",
             array('!site_id' => $site_id));
 
@@ -148,10 +176,78 @@ function _voipsupport_sms_process_request($msg, $caller_number, $dest_number) {
         }
         else {
           //Missing site id
-          //@todo: check if its site specific phone number, then we determine site_id from destination number
-          $ret = t("Missing site id.") . ' ' . $help_msg;
-          //log the error
-          voipsupport_log("Message with invalid request received. Message content: ".print_r($msg, true));
+          if (count($valid_site_ids) == 1) {
+            //There is just one matching site for this SMS number, check
+            //if its using retrieve SMS syntax
+            $site_id = reset($valid_site_ids);
+            $ontrack_site = OnTrackSite::getSite($site_id, $dest_number);
+            if ($ontrack_site->getSyntax() == 'retrieve') {
+              //This SMS number is set to retrieve id from dest_number so create ticket
+              $ticket_text = $msg;
+              $ret = voipsupport_create_ticket($ontrack_site, $ticket_text, $caller_number);
+            }
+          }
+
+          if(!$ret) {
+            $ret = t("Missing site id.") . ' ' . $help_msg;
+            //log the error
+            voipsupport_log("Message with invalid request received. Message content: ".print_r($msg, true));
+          }
+        }*/
+        //Else this is CREATE request
+        //Get array of valid site_ids for this SMS number
+        $valid_site_ids = OnTrackSite::getSiteIds($dest_number);
+        if (count($valid_site_ids) == 1) {
+          //There is just one matching site for this SMS number, check
+          //if its using retrieve SMS syntax
+          $site_id = reset($valid_site_ids);
+          $ontrack_site = OnTrackSite::getSite($site_id, $dest_number);
+          if ($ontrack_site->getSyntax() == 'retrieve') {
+            //This SMS number is set to retrieve id from dest_number so create ticket
+            $ticket_text = $msg;
+            $ret = voipsupport_create_ticket($ontrack_site, $ticket_text, $caller_number);
+            return $ret;
+          }
+        }
+        #Else
+        //Check if this SMS has embedded site id in its body
+        $request = explode(" ", $msg);
+        $site_id = $request[0];
+        if (is_numeric($site_id)) {
+          //SMS syntax: embedded site id
+          //Check if site_id is valid
+          if (isset($valid_site_ids[$site_id])) {
+            //Load site object for further info like language, site name,...
+            $ontrack_site = OnTrackSite::getSite($site_id, $dest_number);
+            //Create new ticket
+            unset($request[0]); //remove site_id from ticket_text
+            $ticket_text = implode(" ", $request);
+            $ret = voipsupport_create_ticket($ontrack_site, $ticket_text, $caller_number);
+          }
+          else {
+            //Invalid site id
+            //@todo: replace XXX with contact number
+            $ret = t("!site_id is not a valid site"
+                ." identifier. Please contact XXX for additional information.",
+              array(
+                '!site_id' => $site_id
+              ),
+              array(
+                'langcode' => $langcode
+              )
+            );
+
+            //log the error
+            voipsupport_log($site_id . " is not a valid site");
+          }
+        }
+        else {
+          //Missing site id
+          if(!$ret) {
+            $ret = t("Missing site id.", array(), array('langcode' => $langcode)) . ' ' . $help_msg;
+            //log the error
+            voipsupport_log("Message with invalid request received. Message content: ".print_r($msg, true));
+          }
         }
       }
     }
@@ -159,6 +255,26 @@ function _voipsupport_sms_process_request($msg, $caller_number, $dest_number) {
   return $ret;
 }
 
+function voipsupport_create_ticket($ontrack_site, $ticket_text, $caller_number) {
+  $langcode = $ontrack_site->getLanguage();
+  $site_name = $ontrack_site->getSiteName();
+  $site_id = $ontrack_site->getSiteId();
+  watchdog('voipsupport', "Using language $langcode");
+
+  //Create new ticket
+  $ticket_id = ontrack_create_ticket_from_sms($site_id, $ticket_text, $caller_number);
+  $ret = t("!site_name. New ticket created with id !ticket_id. "
+      ."Please use that id in further inquiries about this ticket.",
+    array(
+      '!ticket_id' => $ticket_id,
+      '!site_name' => $site_name),
+    array(
+      'langcode' => $langcode
+    )
+  );
+
+  return $ret;
+}
 /*Create voipsupport ticket*/
 if(variable_get('voipsupport_demo', FALSE)) {
 function ontrack_create_ticket_from_sms($site_id, $ticket_text, $caller_number) {
@@ -168,7 +284,7 @@ function ontrack_create_ticket_from_sms($site_id, $ticket_text, $caller_number) 
 }
 
 function ontrack_get_ticket($ticket_id) {
-  if($ticket_id > 1000) {
+  if($ticket_id<1 || $ticket_id > 1000) {
     return NULL;
   }
   $ticket->title = 'title';
@@ -206,14 +322,15 @@ function ontrack_get_uid_from_phone($caller_number) {
 }
 
 function ontrack_get_site_id_from_phone($dest_number) {
-  $site_id = rand(1,100);
+  $site_id = rand(1,10);
   return $site_id;
 }
 
 function ontrack_get_site_list() {
-  for($i=1;$i<=100;$i++) {
+  for($i=1;$i<=10;$i++) {
     $sites[$i]->name = 'Site '.$i;
     $sites[$i]->id = $i;
+    $sites[$i]->language = 'en';
   }
 
   return $sites;
