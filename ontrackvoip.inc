@@ -54,7 +54,7 @@ class OnTrackSite {
   function getSiteName() {
     //@todo:
     $site_list = ontrack_get_site_list();
-    $site_name = isset($site_list[$this->site_id]) ? $site_list[$this->site_id]->name : '';
+    $site_name = isset($site_list[$this->site_id]) ? $site_list[$this->site_id]['title'] : '';
     return $site_name;
   }
 

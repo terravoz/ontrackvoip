@@ -4,8 +4,12 @@
  * @file
  * Load OnTrack VoIP Scripts.
  */
+if(variable_get('ontrackvoip_demo', FALSE)) {
+  //Demo functions
+  include_once('ontrackvoip_demo.inc');
+}
 include_once('ontrackvoip.inc');
-include_once('ontrackvoip_voip.scripts.inc');
+include_once('ontrackvoip.scripts.inc');
 include_once('ontrackvoip_ahah.inc');
 
 /**
@@ -13,15 +17,15 @@ include_once('ontrackvoip_ahah.inc');
  */
 function ontrackvoip_menu() {
   $items['admin/config/ontrackvoip'] = array(
-    'title' => 'OnTrack OnTrack VoIP',
-    'description' => 'OnTrack OnTrack VoIP settings',
+    'title' => 'OnTrack VoIP',
+    'description' => 'OnTrack VoIP settings',
     'page callback' => 'ontrackvoip_admin_menu_block_page',
     'access arguments' => array('administer ontrackvoip configuration'),
   );
 
   $items['admin/config/ontrackvoip/ontrackvoip'] = array(
-    'title' => 'OnTrack OnTrack VoIP',
-    'description' => 'OnTrack VoIP Ontrack settings.',
+    'title' => 'OnTrack VoIP',
+    'description' => 'OnTrack VoIP settings.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('ontrackvoip_admin_settings_form'),
     'access arguments' => array('administer ontrackvoip configuration'),
@@ -73,11 +77,10 @@ function ontrackvoip_admin_settings_form($form, &$form_state) {
   }
 
   //Build site list from ontrack_get_site_list
-  //@todo: verify ontrack syntax
   $sites = ontrack_get_site_list();
   $site_list[''] = '<none>';
   foreach($sites as $site_id => $site) {
-    $site_list[$site_id] = "$site->name (Site ID:$site_id)";
+    $site_list[$site_id] = $site['title']." (Site ID:$site_id)";
   }
 
   //Build form table
