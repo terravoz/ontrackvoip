@@ -82,14 +82,27 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
   $default_langcode = isset($ontrack_phone) ? $ontrack_phone->getLanguage() : $language->language;
   $langcode = $default_langcode;
   //watchdog('ontrackvoip', "Default language $default_langcode");
-  $help_msg = t("To create new support ticket, please text the actual ticket "
-      ."problem description. To get a support ticket, please text number of "
-      ."the ticket id (ex: 123, 657, 1298, etc).",
-    array(),
-    array(
-      'langcode' => $default_langcode
-    )
-  );
+  if ($ontrack_phone->getSyntax() == 'retrieve') {
+    $help_msg = t("To create new support ticket, please text the actual ticket "
+        ."problem description. To get a support ticket, please text number of "
+        ."the ticket id (ex: 123, 657, 1298, etc).",
+      array(),
+      array(
+        'langcode' => $default_langcode
+      )
+    );
+  }
+  else {
+    $help_msg = t("To create new support ticket, please text the site id "
+        . "followed by the actual ticket problem description. To get a support "
+        . "ticket, please text number of the ticket id (ex: 123, 657, 1298, etc).",
+      array(),
+      array(
+        'langcode' => $default_langcode
+      )
+    );
+  }
+
   $msg = trim($msg);
   if ($msg == '') {
     $ret = t("Empty request.", array(), array('langcode' => $default_langcode)) . ' ' . $help_msg;
