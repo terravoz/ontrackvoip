@@ -59,7 +59,12 @@ function ontrack_get_site_list() {
   for($i=1;$i<=10;$i++) {
     $sites[$i]['title'] = 'Site '.$i;
     $sites[$i]['site_id'] = $i;
-    $sites[$i]['language'] = 'en';
+    if($i>5) {
+      $sites[$i]['language'] = 'es';
+    }
+    else {
+      $sites[$i]['language'] = 'en';
+    }
   }
 
   return $sites;

@@ -74,11 +74,14 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
   $ontrack_phone = OnTrackPhone::load($dest_number);
   if (!$ontrack_phone) {
     //@todo: error message when ontrack phone not recognized
+    ontrackvoip_log("Destination number $dest_number not recognized.");
+    return '';
   }
 
   //Get either a default phone number language or default site language.
   $default_langcode = isset($ontrack_phone) ? $ontrack_phone->getLanguage() : $language->language;
   $langcode = $default_langcode;
+  //watchdog('ontrackvoip', "Default language $default_langcode");
   $help_msg = t("To create new support ticket, please text the actual ticket "
       ."problem description. To get a support ticket, please text number of "
       ."the ticket id (ex: 123, 657, 1298, etc).",
@@ -117,6 +120,7 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
           $site_langcode = $ontrack_site->getSiteLanguage();
           //Use site language, if not set use phone number languaage
           $langcode = isset($site_langcode) ? $site_langcode : $default_langcode;
+          //watchdog('ontrackvoip', "Using site language $langcode");
           $site_name = $ontrack_site->getSiteName();
         }
 
@@ -225,9 +229,9 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
 /*Helper function to create ticket and return appropriate response*/
 function ontrackvoip_create_ticket($ontrack_site, $ticket_text, $caller_number) {
   $langcode = $ontrack_site->getSiteLanguage();
+  //watchdog('ontrackvoip', "Using site language $langcode");
   $site_name = $ontrack_site->getSiteName();
   $site_id = $ontrack_site->getSiteId();
-  //watchdog('ontrackvoip', "Using language $langcode");
 
   //Create new ticket
   $ticket_id = ontrack_create_ticket_from_sms($site_id, $ticket_text, $caller_number);

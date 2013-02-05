@@ -56,8 +56,14 @@ function ontrackvoip_admin_settings_form($form, &$form_state) {
 
   $form['wrapper']['description'] = array(
     '#type' => 'markup',
-    '#markup' => '<div><b>Phone number: </b><span>Number must be in <a target="_blank" href="http://en.wikipedia.org/wiki/E.164">E.164</a> format.
-    Supported formats include: +14155551212 for a US</span></div>',
+    '#markup' => '<div><b>Phone number: </b><span>Phone number must be formatted
+     with a \'+\' and country code, e.g. +16175551212
+    (<a target="_blank" href="http://en.wikipedia.org/wiki/E.164">E.164</a>)
+    </span></div>
+    <div><b>Phone Number Language: </b><span>This is the default language to be
+    used when there is no site context, like in error messages. Otherwise, the site
+    language will overwrite this value.</span></div>
+     <div><b>Site ID: </b><span>The site(s) associated with the phone number. You might choose one or more depending on the case.</span></div>',
   );
   //Load existing Ontrack sites
   $ontrack_phones = OnTrackPhone::loadAll();
@@ -70,7 +76,7 @@ function ontrackvoip_admin_settings_form($form, &$form_state) {
   // $form_state['ontrackvoip_ahah_rows_count'] to determine the number of rows to build.
   if (empty($form_state['ontrackvoip_ahah_rows_count'])) {
     $num_of_phones = count($ontrack_phones);
-    $form_state['ontrackvoip_ahah_rows_count'] = ($num_of_phones > 10) ? $num_of_phones : 10;
+    $form_state['ontrackvoip_ahah_rows_count'] = ($num_of_phones > 3) ? $num_of_phones : 3;
   }
 
   //Build language list from Locale enabled languages
@@ -124,7 +130,7 @@ function ontrackvoip_admin_settings_form($form, &$form_state) {
 
     $form['wrapper']['field']['field_'.$i]['language'] = array(
       '#prefix' => '<td>',
-      '#title' => t('Language'),
+      '#title' => t('Phone Number Language'),
       '#type' => 'select',
       '#options' => $language_list,
       '#default_value' => (isset($ontrack_phone)) ? $ontrack_phone->getLanguage() : $language->language,

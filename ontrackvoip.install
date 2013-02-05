@@ -61,7 +61,7 @@ function ontrackvoip_schema() {
 }
 
 /**
- * Drop hangup_script and processing_hangup fields
+ * Drop ontrack_sites table and create new one
  */
 function ontrackvoip_update_7101() {
   //Recreate the table
