@@ -51,6 +51,8 @@ function ontrackvoip_admin_menu_block_page() {
 }
 
 function ontrackvoip_admin_settings_form($form, &$form_state) {
+  //Get default language
+  global $language;
 
   $form['wrapper']['description'] = array(
     '#type' => 'markup',
@@ -58,7 +60,8 @@ function ontrackvoip_admin_settings_form($form, &$form_state) {
     Supported formats include: +14155551212 for a US</span></div>',
   );
   //Load existing Ontrack sites
-  $ontrack_sites = OnTrackSite::load();
+  $ontrack_phones = OnTrackPhone::loadAll();
+
   // Because we have many fields with the same values, we have to set
   // #tree to be able to access them.
   $form['#tree'] = TRUE;
@@ -66,8 +69,8 @@ function ontrackvoip_admin_settings_form($form, &$form_state) {
   // Build the fieldset with the proper number of textfields.
   // $form_state['ontrackvoip_ahah_rows_count'] to determine the number of rows to build.
   if (empty($form_state['ontrackvoip_ahah_rows_count'])) {
-    $num_of_sites = count($ontrack_sites);
-    $form_state['ontrackvoip_ahah_rows_count'] = ($num_of_sites > 10) ? $num_of_sites : 10;
+    $num_of_phones = count($ontrack_phones);
+    $form_state['ontrackvoip_ahah_rows_count'] = ($num_of_phones > 10) ? $num_of_phones : 10;
   }
 
   //Build language list from Locale enabled languages
@@ -78,7 +81,7 @@ function ontrackvoip_admin_settings_form($form, &$form_state) {
 
   //Build site list from ontrack_get_site_list
   $sites = ontrack_get_site_list();
-  $site_list[''] = '<none>';
+  //$site_list[''] = '<none>';
   foreach($sites as $site_id => $site) {
     $site_list[$site_id] = $site['title']." (Site ID:$site_id)";
   }
@@ -92,7 +95,7 @@ function ontrackvoip_admin_settings_form($form, &$form_state) {
       $prefix = '';
     }
 
-    $ontrack_site = (isset($ontrack_sites[$i])) ? $ontrack_sites[$i] : NULL;
+    $ontrack_phone = (isset($ontrack_phones[$i])) ? $ontrack_phones[$i] : NULL;
 
     if (($i+1) == $form_state['ontrackvoip_ahah_rows_count']) {
       $suffix = '</table>';
@@ -104,7 +107,7 @@ function ontrackvoip_admin_settings_form($form, &$form_state) {
       '#prefix' => $prefix.'<tr><td>',
       '#title' => t('Phone number'),
       '#type' => 'textfield',
-      '#default_value' => (isset($ontrack_site)) ? $ontrack_site->getPhoneNumber() : '',
+      '#default_value' => (isset($ontrack_phone)) ? $ontrack_phone->getPhoneNumber() : '',
       '#suffix' => '</td>',
     );
 
@@ -112,8 +115,10 @@ function ontrackvoip_admin_settings_form($form, &$form_state) {
       '#prefix' => '<td>',
       '#title' => t('Site ID'),
       '#type' => 'select',
+      '#size' => 5,
+      '#multiple' => TRUE,
       '#options' => $site_list,
-      '#default_value' => (isset($ontrack_site)) ? $ontrack_site->getSiteId() : '',
+      '#default_value' => (isset($ontrack_phone)) ? $ontrack_phone->getSiteIds() : '',
       '#suffix' => '</td>',
     );
 
@@ -122,7 +127,7 @@ function ontrackvoip_admin_settings_form($form, &$form_state) {
       '#title' => t('Language'),
       '#type' => 'select',
       '#options' => $language_list,
-      '#default_value' => (isset($ontrack_site)) ? $ontrack_site->getLanguage() : 'en',
+      '#default_value' => (isset($ontrack_phone)) ? $ontrack_phone->getLanguage() : $language->language,
       '#suffix' => '</td>',
     );
 
@@ -132,7 +137,7 @@ function ontrackvoip_admin_settings_form($form, &$form_state) {
       '#type' => 'select',
       '#options' => array('embedded' => t('use embedded site id in SMS ticket creation requests'),
       'retrieve' => t('retrieve site id based on the site telephone number')),
-      '#default_value' => (isset($ontrack_site)) ? $ontrack_site->getSyntax() : '',
+      '#default_value' => (isset($ontrack_phone)) ? $ontrack_phone->getSyntax() : '',
       '#suffix' => $suffix.'</td></tr>',
     );
   }
@@ -175,38 +180,29 @@ function ontrackvoip_admin_settings_form_validate($form, &$form_state) {
 }
 
 function _ontrackvoip_admin_settings_validate(&$form_state) {
+  $phone_numbers = array();
   $rows = $form_state['values']['wrapper']['field'];
   $i=0;
-  foreach($rows as $row) {
-    if(($row['phone'] && !$row['site_id']) || (!$row['phone'] && $row['site_id'])) {
+  foreach($rows as $id => $row) {
+    if(($row['phone'] && empty($row['site_id'])) || (!$row['phone'] && !empty($row['site_id']))) {
       //If phone is entered without site id or viceversa throw error
       form_set_error('wrapper][field][field_'.$i, t('You must enter both phone number and site id.'));
     }
 
-    if($row['site_id'] && !is_numeric($row['site_id'])) {
-      //If site id is not numeric throw error
-      form_set_error('wrapper][field][field_'.$i.'][site_id', t('Site id must be numeric.'));
-    }
-
     //Build array of phone numbers to check if one is repeated more than once
     if($row['phone']) {
-      if(!isset($phone_numbers[$row['phone']])) {
-        $phone_numbers[$row['phone']] = 0;
+      if(isset($phone_numbers[$row['phone']])) {
+        form_set_error('wrapper][field]['.$id.'][phone', t('Phone number must be unique.'));
       }
-      $phone_numbers[$row['phone']]++;
+      $phone_numbers[$row['phone']] = TRUE;
+    }
+
+    //Retrieve syntax can only be used if site id is one.
+    if($row['syntax'] == 'retrieve' && (count($row['site_id']) > 1)) {
+        //We can't have retrieve SMS syntax for phone numbers used in multiple site ids
+        form_set_error('wrapper][field]['.$id.'][syntax', t('Retrieve SMS syntax can\'t be used when phone number is used with multiple site ids.'));
     }
     $i++;
-  }
-
-  //Loop again, this time check if retrieve sms syntax option is enabled for any
-  //number which shows of twice or more on form.
-  foreach($rows as $id => $row) {
-    if($row['phone'] && $row['syntax'] == 'retrieve') {
-      if($phone_numbers[$row['phone']] > 1) {
-        //We can't have retrieve SMS syntax for phone numbers used in multiple site ids
-        form_set_error('wrapper][field]['.$id.'][syntax', t('Retrieve SMS syntax can\'t be used when phone number is used in multiple site ids.'));
-      }
-    }
   }
 }
 
@@ -226,20 +222,19 @@ function ontrackvoip_admin_settings_form_submit($form, &$form_state) {
 function _ontrackvoip_admin_settings_submit($values) {
   //var_dump($values);die();
   //delete all ontrack site data
-  OnTrackSite::deleteAll();
+  OnTrackPhone::deleteAll();
   $rows = $values['wrapper']['field'];
   foreach($rows as $row) {
     if($row['phone']) {
-      $ontrack_site = new OnTrackSite($row['phone'], $row['site_id'], $row['language'], $row['syntax']);
-      $ontrack_site->save();
+      $ontrack_phone = new OnTrackPhone($row['phone'], $row['site_id'], $row['language'], $row['syntax']);
+      $ontrack_phone->save();
     }
   }
   drupal_set_message('OnTrack sites saved sucessfully');
 }
 
 function _ontrackvoip_admin_settings_cleanup() {
-  //variable_del('blazemeter_anon_visitors');
-
+  OnTrackPhone::deleteAll();
   drupal_set_message(t('OnTrack VoIP configuration form is reset.'));
 }
 

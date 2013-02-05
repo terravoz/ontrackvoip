@@ -4,7 +4,12 @@
  * Install, update and uninstall functions for the voipcall module.
  *
  */
+/**
+ * Implements hook_install().
+ */
+function ontrackvoip_install() {
 
+}
 /**
  * Implements hook_uninstall().
  */
@@ -27,15 +32,13 @@ function ontrackvoip_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
-      'site_id' => array(
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'default' => 0,
-        'not null' => TRUE,
-      ),
       'phone_number' => array(
         'type' => 'varchar',
         'length' => 255,
+      ),
+      'site_ids' => array(
+        'type' => 'text',
+        'size' => 'big',
       ),
       'language' => array(
         'type' => 'varchar',
@@ -51,8 +54,19 @@ function ontrackvoip_schema() {
       ),
     ),
     'primary key' => array('id'),
+    'unique key' => array('phone_number'),
   );
 
   return $schema;
 }
 
+/**
+ * Drop hangup_script and processing_hangup fields
+ */
+function ontrackvoip_update_7101() {
+  //Recreate the table
+  db_drop_table('ontrack_sites');
+  $schema = ontrackvoip_schema();
+  db_create_table('ontrack_sites', $schema['ontrack_sites']);
+  return t('OnTrackVoIP Update 7101 ran successfully.');
+}

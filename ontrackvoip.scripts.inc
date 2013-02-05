@@ -70,21 +70,26 @@ function ontrackvoip_voipscript_load_script($script_name, $options = NULL) {
  */
 function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $call_id) {
   //watchdog('ontrackvoip', "In _ontrackvoip_sms_process_request with $msg, $caller_number, $dest_number");
-  //@todo: remove when we have working languages UI
-  $langcode = variable_get('ontrack_voip_language', 'es');
+  global $language;
+  $ontrack_phone = OnTrackPhone::load($dest_number);
+  if (!$ontrack_phone) {
+    //@todo: error message when ontrack phone not recognized
+  }
 
-  $help_msg = t("To create a new support ticket, please text us the actual "
-      . "request description. To check the status of an existing ticket, "
-      . "please text us the ticket id number (ex: 123, 657, 1298, etc).",
+  //Get either a default phone number language or default site language.
+  $default_langcode = isset($ontrack_phone) ? $ontrack_phone->getLanguage() : $language->language;
+  $langcode = $default_langcode;
+  $help_msg = t("To create new support ticket, please text the actual ticket "
+      ."problem description. To get a support ticket, please text number of "
+      ."the ticket id (ex: 123, 657, 1298, etc).",
     array(),
     array(
-      'langcode' => $langcode
+      'langcode' => $default_langcode
     )
   );
   $msg = trim($msg);
   if ($msg == '') {
-    $ret = t("Empty request.", array(), array('langcode' => $langcode)) . ' ' . $help_msg;
-
+    $ret = t("Empty request.", array(), array('langcode' => $default_langcode)) . ' ' . $help_msg;
     //log the error
     ontrackvoip_log("Empty message received. Call ID: ".$call_id);
   }
@@ -107,20 +112,21 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
         if($ticket_data) {
           $site_id = $ticket_data['site_node']->nid;
           $ticket = $ticket_data['ticket_node'];
-          $ontrack_site = OnTrackSite::getSite($site_id, $dest_number);
-          if ($ontrack_site) {
-            $langcode = $ontrack_site->getLanguage();
-            $site_name = $ontrack_site->getSiteName();
-          }
+
+          $ontrack_site = new OnTrackSite($site_id);
+          $site_langcode = $ontrack_site->getSiteLanguage();
+          //Use site language, if not set use phone number languaage
+          $langcode = isset($site_langcode) ? $site_langcode : $default_langcode;
+          $site_name = $ontrack_site->getSiteName();
         }
 
-        if(!$ticket_data) {
+        if(!$ticket) {
           $ret = t("Invalid ticket id !ticket_id. Please try again with a different one.",
             array(
-              '!ticket_id' => $ticket_id
+              '!ticket_id' => $ticket_id,
             ),
             array(
-              'langcode' => $langcode
+              'langcode' => $default_langcode,
             )
         );
           //log the error
@@ -133,10 +139,10 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
           $ret = t("Ticket !ticket_id status: !ticket_state.",
             array(
               '!ticket_id' => $ticket_id,
-              '!ticket_state' => ontrack_get_ticket_status_description_from_code($ticket->state)
+              '!ticket_state' => ontrack_get_ticket_status_description_from_code($ticket->state),
             ),
             array(
-              'langcode' => $langcode
+              'langcode' => $langcode,
             ));
         }
         else {
@@ -157,13 +163,13 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
       else{
         //Else this is CREATE request
         //Get array of valid site_ids for this SMS number
-        $valid_site_ids = OnTrackSite::getSiteIds($dest_number);
+        $valid_site_ids = $ontrack_phone->getSiteIds();
         if (count($valid_site_ids) == 1) {
           //There is just one matching site for this SMS number, check
           //if its using retrieve SMS syntax
           $site_id = reset($valid_site_ids);
-          $ontrack_site = OnTrackSite::getSite($site_id, $dest_number);
-          if ($ontrack_site->getSyntax() == 'retrieve') {
+          $ontrack_site = new OnTrackSite($site_id);
+          if ($ontrack_phone->getSyntax() == 'retrieve') {
             //This SMS number is set to retrieve id from dest_number so create ticket
             $ticket_text = $msg;
             $ret = ontrackvoip_create_ticket($ontrack_site, $ticket_text, $caller_number);
@@ -179,7 +185,7 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
           //Check if site_id is valid
           if (isset($valid_site_ids[$site_id])) {
             //Load site object for further info like language, site name,...
-            $ontrack_site = OnTrackSite::getSite($site_id, $dest_number);
+            $ontrack_site = new OnTrackSite($site_id);
             //Create new ticket
             unset($request[0]); //remove site_id from ticket_text
             $ticket_text = implode(" ", $request);
@@ -191,10 +197,10 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
             $ret = t("!site_id is not a valid site"
                 ." identifier. Please contact XXX for additional information.",
               array(
-                '!site_id' => $site_id
+                '!site_id' => $site_id,
               ),
               array(
-                'langcode' => $langcode
+                'langcode' => $default_langcode,
               )
             );
 
@@ -205,7 +211,7 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
         else {
           //Missing site id
           if(!$ret) {
-            $ret = t("Missing site id.", array(), array('langcode' => $langcode)) . ' ' . $help_msg;
+            $ret = t("Missing site id.", array(), array('langcode' => $default_langcode)) . ' ' . $help_msg;
             //log the error
             ontrackvoip_log("Message with invalid request received. Message content: ".print_r($msg, true)." Call ID: ".$call_id);
           }
@@ -218,7 +224,7 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
 
 /*Helper function to create ticket and return appropriate response*/
 function ontrackvoip_create_ticket($ontrack_site, $ticket_text, $caller_number) {
-  $langcode = $ontrack_site->getLanguage();
+  $langcode = $ontrack_site->getSiteLanguage();
   $site_name = $ontrack_site->getSiteName();
   $site_id = $ontrack_site->getSiteId();
   //watchdog('ontrackvoip', "Using language $langcode");
