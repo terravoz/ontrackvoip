@@ -92,6 +92,8 @@ function ontrackvoip_admin_settings_form($form, &$form_state) {
     $site_list[$site_id] = $site['title']." (Site ID:$site_id)";
   }
 
+  //Sort alphabetically
+  natsort($site_list);
   //Build form table
   for ($i = 0; $i < $form_state['ontrackvoip_ahah_rows_count']; $i++) {
     if($i == 0) {

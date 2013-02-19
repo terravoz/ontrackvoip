@@ -57,12 +57,14 @@ function ontrack_get_site_id_from_phone($dest_number) {
 
 function ontrack_get_site_list() {
   for($i=1;$i<=10;$i++) {
-    $sites[$i]['title'] = 'Site '.$i;
+
     $sites[$i]['site_id'] = $i;
     if($i>5) {
+      $sites[$i]['title'] = 'aSite '.$i;
       $sites[$i]['language'] = 'es';
     }
     else {
+      $sites[$i]['title'] = 'bSite '.$i;
       $sites[$i]['language'] = 'en';
     }
   }
