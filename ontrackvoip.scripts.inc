@@ -83,9 +83,7 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
   $langcode = $default_langcode;
   //watchdog('ontrackvoip', "Default language $default_langcode");
   if ($ontrack_phone->getSyntax() == 'retrieve') {
-    $help_msg = t("To create a new support request, please text the problem "
-        . "description. To get the status of an existing request, please text "
-        . "the number of the request id, ie. 123, 657, 1298, etc.",
+    $help_msg = t("To create a new support request, please text the problem description. To get the status of an existing request, please text the number of the request id, ie. 123, 657, 1298, etc.",
       array(),
       array(
         'langcode' => $default_langcode
@@ -93,10 +91,7 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
     );
   }
   else {
-    $help_msg = t("To create a new support request, please text the site id "
-        . "followed by the actual problem description. To get the status of an "
-        . "existing request, please text the number of the request id, ie. "
-        . "123, 657, 1298, etc.",
+    $help_msg = t("To create a new support request, please text the site id followed by the actual problem description. To get the status of an existing request, please text the number of the request id, ie. 123, 657, 1298, etc.",
       array(),
       array(
         'langcode' => $default_langcode
@@ -165,9 +160,7 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
         }
         else {
           //This user is not authorized to access the ticket
-          $ret = t("!site_name. You are not authorized to access request "
-              . "!ticket_id. For additional information, please contact the "
-              . "site administrator.",
+          $ret = t("!site_name. You are not authorized to access request !ticket_id. For additional information, please contact the site administrator.",
             array(
               '!ticket_id' => $ticket_id,
               '!site_name' => $site_name,
@@ -214,8 +207,7 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
           else {
             //Invalid site id
             //@todo: replace XXX with contact number
-            $ret = t("!site_id is not a valid site identifier. Please contact "
-                . "the site administrator for additional information.",
+            $ret = t("!site_id is not a valid site identifier. Please contact the site administrator for additional information.",
               array(
                 '!site_id' => $site_id,
               ),
@@ -251,8 +243,7 @@ function ontrackvoip_create_ticket($ontrack_site, $ticket_text, $caller_number) 
 
   //Create new ticket
   $ticket_id = ontrack_create_ticket_from_sms($site_id, $ticket_text, $caller_number);
-  $ret = t("!site_name. New request created with id !ticket_id. "
-      ."Please use that id in further inquiries about this ticket.",
+  $ret = t("!site_name. New request created with id !ticket_id. Please use that id in further inquiries about this ticket.",
     array(
       '!ticket_id' => $ticket_id,
       '!site_name' => $site_name

@@ -12,7 +12,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
-"POT-Creation-Date: 2013-02-19 15:03+0100\n"
+"POT-Creation-Date: 2013-02-19 21:52+0100\n"
 "PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
 "Last-Translator: NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
@@ -25,71 +25,91 @@ msgstr ""
 msgid "SMS from %caller_number on @date (id: %call_id)"
 msgstr ""
 
-#: ontrackvoip.scripts.inc:109
+#: ontrackvoip.scripts.inc:86
+msgid "To create a new support request, please text the problem description. To get the status of an existing request, please text the number of the request id, ie. 123, 657, 1298, etc."
+msgstr ""
+
+#: ontrackvoip.scripts.inc:94
+msgid "To create a new support request, please text the site id followed by the actual problem description. To get the status of an existing request, please text the number of the request id, ie. 123, 657, 1298, etc."
+msgstr ""
+
+#: ontrackvoip.scripts.inc:104
 msgid "Empty request."
 msgstr ""
 
-#: ontrackvoip.scripts.inc:142
+#: ontrackvoip.scripts.inc:137
 msgid "Invalid request id !ticket_id. Please try again with a different one."
 msgstr ""
 
-#: ontrackvoip.scripts.inc:157
+#: ontrackvoip.scripts.inc:152
 msgid "Request !ticket_id status: !ticket_state."
 msgstr ""
 
-#: ontrackvoip.scripts.inc:234
+#: ontrackvoip.scripts.inc:163
+msgid "!site_name. You are not authorized to access request !ticket_id. For additional information, please contact the site administrator."
+msgstr ""
+
+#: ontrackvoip.scripts.inc:210
+msgid "!site_id is not a valid site identifier. Please contact the site administrator for additional information."
+msgstr ""
+
+#: ontrackvoip.scripts.inc:226
 msgid "Missing site id."
 msgstr ""
 
-#: ontrackvoip.module:114
+#: ontrackvoip.scripts.inc:246
+msgid "!site_name. New request created with id !ticket_id. Please use that id in further inquiries about this ticket."
+msgstr ""
+
+#: ontrackvoip.module:116
 msgid "Phone number"
 msgstr ""
 
-#: ontrackvoip.module:122
+#: ontrackvoip.module:124
 msgid "Site ID"
 msgstr ""
 
-#: ontrackvoip.module:133
+#: ontrackvoip.module:135
 msgid "Phone Number Language"
 msgstr ""
 
-#: ontrackvoip.module:142
+#: ontrackvoip.module:144
 msgid "SMS Syntax"
 msgstr ""
 
-#: ontrackvoip.module:144
+#: ontrackvoip.module:146
 msgid "use embedded site id in SMS ticket creation requests"
 msgstr ""
 
-#: ontrackvoip.module:145
+#: ontrackvoip.module:147
 msgid "retrieve site id based on the site telephone number"
 msgstr ""
 
-#: ontrackvoip.module:156
+#: ontrackvoip.module:158
 msgid "Add More"
 msgstr ""
 
-#: ontrackvoip.module:167
+#: ontrackvoip.module:169
 msgid "Save"
 msgstr ""
 
-#: ontrackvoip.module:172
+#: ontrackvoip.module:174
 msgid "Cleanup"
 msgstr ""
 
-#: ontrackvoip.module:195
+#: ontrackvoip.module:197
 msgid "You must enter both phone number and site id."
 msgstr ""
 
-#: ontrackvoip.module:201
+#: ontrackvoip.module:203
 msgid "Phone number must be unique."
 msgstr ""
 
-#: ontrackvoip.module:209
+#: ontrackvoip.module:211
 msgid "Retrieve SMS syntax can't be used when phone number is used with multiple site ids."
 msgstr ""
 
-#: ontrackvoip.module:244
+#: ontrackvoip.module:246
 msgid "OnTrack VoIP configuration form is reset."
 msgstr ""
 
