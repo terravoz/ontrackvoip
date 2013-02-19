@@ -27,39 +27,39 @@ msgstr ""
 
 #: ontrackvoip.scripts.inc:86
 msgid "To create a new support request, please text the problem description. To get the status of an existing request, please text the number of the request id, ie. 123, 657, 1298, etc."
-msgstr ""
+msgstr "Para crear un ticket nuevo, por favor envía la descripción del problema. Para recibir el estado de un ticket ya existente, por favor envía el número del ticket, por ejemplo, 123, 657, 1298, etc."
 
 #: ontrackvoip.scripts.inc:94
 msgid "To create a new support request, please text the site id followed by the actual problem description. To get the status of an existing request, please text the number of the request id, ie. 123, 657, 1298, etc."
-msgstr ""
+msgstr "Para crear un nuevo ticket, por favor envía el número del sitio seguido de la descripción del problema. Para obtener el estado de un ticket ya existente, por favor envía el número del ticket, por ejemplo, 123, 657, 1298, etc."
 
 #: ontrackvoip.scripts.inc:104
 msgid "Empty request."
-msgstr ""
+msgstr "Mensaje vacío."
 
 #: ontrackvoip.scripts.inc:137
 msgid "Invalid request id !ticket_id. Please try again with a different one."
-msgstr ""
+msgstr "Ticket !ticket_id no válido. Por favor, intenta de nuevo con un número de ticket diferente."
 
 #: ontrackvoip.scripts.inc:152
 msgid "Request !ticket_id status: !ticket_state."
-msgstr ""
+msgstr "Solicitar estado del ticekt !ticket_id: !ticket_state"
 
 #: ontrackvoip.scripts.inc:163
 msgid "!site_name. You are not authorized to access request !ticket_id. For additional information, please contact the site administrator."
-msgstr ""
+msgstr "!site_name. No estás autorizado para acceder al ticket !ticket_id. Para más información, por favor contacta a tu administrador local."
 
 #: ontrackvoip.scripts.inc:210
 msgid "!site_id is not a valid site identifier. Please contact the site administrator for additional information."
-msgstr ""
+msgstr "El !site_id no es un número de sitio válido. Por favor, contacta a tu administrador local para más información."
 
 #: ontrackvoip.scripts.inc:226
 msgid "Missing site id."
-msgstr ""
+msgstr "Falta el número de identificación del sitio."
 
 #: ontrackvoip.scripts.inc:246
 msgid "!site_name. New request created with id !ticket_id. Please use that id in further inquiries about this ticket."
-msgstr ""
+msgstr "!site_name. Ticket nuevo creado con el número de identificación !ticket_id. Por favor, usa este número para futuras preguntas sobre este ticket."
 
 #: ontrackvoip.module:116
 msgid "Phone number"
