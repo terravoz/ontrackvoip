@@ -1,0 +1,119 @@
+# $Id$
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  ontrackvoip.scripts.inc: n/a
+#  ontrackvoip.module: n/a
+#  ontrackvoip.info: n/a
+#  ontrackvoip.install: n/a
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2013-02-19 15:03+0100\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: ontrackvoip.scripts.inc:25
+msgid "SMS from %caller_number on @date (id: %call_id)"
+msgstr ""
+
+#: ontrackvoip.scripts.inc:109
+msgid "Empty request."
+msgstr ""
+
+#: ontrackvoip.scripts.inc:142
+msgid "Invalid request id !ticket_id. Please try again with a different one."
+msgstr ""
+
+#: ontrackvoip.scripts.inc:157
+msgid "Request !ticket_id status: !ticket_state."
+msgstr ""
+
+#: ontrackvoip.scripts.inc:234
+msgid "Missing site id."
+msgstr ""
+
+#: ontrackvoip.module:114
+msgid "Phone number"
+msgstr ""
+
+#: ontrackvoip.module:122
+msgid "Site ID"
+msgstr ""
+
+#: ontrackvoip.module:133
+msgid "Phone Number Language"
+msgstr ""
+
+#: ontrackvoip.module:142
+msgid "SMS Syntax"
+msgstr ""
+
+#: ontrackvoip.module:144
+msgid "use embedded site id in SMS ticket creation requests"
+msgstr ""
+
+#: ontrackvoip.module:145
+msgid "retrieve site id based on the site telephone number"
+msgstr ""
+
+#: ontrackvoip.module:156
+msgid "Add More"
+msgstr ""
+
+#: ontrackvoip.module:167
+msgid "Save"
+msgstr ""
+
+#: ontrackvoip.module:172
+msgid "Cleanup"
+msgstr ""
+
+#: ontrackvoip.module:195
+msgid "You must enter both phone number and site id."
+msgstr ""
+
+#: ontrackvoip.module:201
+msgid "Phone number must be unique."
+msgstr ""
+
+#: ontrackvoip.module:209
+msgid "Retrieve SMS syntax can't be used when phone number is used with multiple site ids."
+msgstr ""
+
+#: ontrackvoip.module:244
+msgid "OnTrack VoIP configuration form is reset."
+msgstr ""
+
+#: ontrackvoip.module:20;27 ontrackvoip.info:0
+msgid "OnTrack VoIP"
+msgstr ""
+
+#: ontrackvoip.module:21
+msgid "OnTrack VoIP settings"
+msgstr ""
+
+#: ontrackvoip.module:28
+msgid "OnTrack VoIP settings."
+msgstr ""
+
+#: ontrackvoip.install:71
+msgid "OnTrackVoIP Update 7101 ran successfully."
+msgstr ""
+
+#: ontrackvoip.info:0
+msgid "OnTrack VoIP Drupal integration"
+msgstr ""
+
+#: ontrackvoip.info:0
+msgid "VoIP Drupal"
+msgstr ""
+
