@@ -1,5 +1,10 @@
 <?php
 //@todo: twilio unicode characters http://forum.twilio.com/twilio/topics/spanish_sms_inbound_outbound
+
+/*
+ * Tropo doesn't support special UTF chars in text messages.
+According to int standards text messages with unicode chars should be limited to 70chars per message.
+Messages that are broken into multiple segments, might not arrive in proper sequence.*/
 /**
  * Implementation of hook_voipscript_get_script_names()
  */
@@ -39,25 +44,38 @@ function ontrackvoip_voipscript_load_script($script_name, $options = NULL) {
       //Helper script to process SMS request
       $script = new VoipScript('ontrackvoip_sms_process_request_script');
       $result = _ontrackvoip_sms_process_request($options['text'], $options['caller_number'], $options['dest_number'], $options['call_id']);
-      // send response in chunks of 160 characteres
-      if (strlen($result) <= 160) {
+
+      if(strlen($result) == mb_strlen($result)) {
+        // send response in chunks of 160 characters
+        $char_limit = 160;
+      }
+      else {
+        //This is unicode SMS, can only contain 70 chars
+        $char_limit = 70;
+      }
+      watchdog('debug',"charleng $char_limit");
+      // send response in chunks of $char_limit characters
+      if (strlen($result) <= $char_limit) {
         $text_array[] = $result;
       }
       else {
         /// lets use 154 characters and keep room for message number like (1/10),
         /// we can have upto 9 parts of the message (9/9)
-        $tmp = wordwrap($result, 154, '\n');
+        $limit = $char_limit - 6;
+        $tmp = wordwrap($result, $limit, '\n');
         $text_array = explode('\n', $tmp);
       }
       $num_of_msg = count($text_array);
+      watchdog('debug',"text ".print_r($text_array,true));
+
       foreach ($text_array as $index => $text) {
         if ($num_of_msg > 1) {
           $msg_number = ($index + 1);
           $text = "(".$msg_number."/".$num_of_msg.") ".$text;
         }
-        //@todo:temp fix
-        $text = remove_accents($text);
         $script->addSendText($text);
+        //@todo: check server variable
+        //$script->addWait(1);
         $script->addLog("sending $text");
       }
       $script->addHangup();
