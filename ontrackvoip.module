@@ -81,8 +81,8 @@ function ontrackvoip_admin_settings_form($form, &$form_state) {
 
   //Build language list from Locale enabled languages
   $languages = language_list();
-  foreach($languages as $langcode => $language) {
-    $language_list[$langcode] = $language->name;
+  foreach($languages as $langcode => $locale_language) {
+    $language_list[$langcode] = $locale_language->name;
   }
 
   //Build site list from ontrack_get_site_list
@@ -228,13 +228,13 @@ function ontrackvoip_admin_settings_form_submit($form, &$form_state) {
 }
 
 function _ontrackvoip_admin_settings_submit($values) {
-  //var_dump($values);die();
   //delete all ontrack site data
   OnTrackPhone::deleteAll();
   $rows = $values['wrapper']['field'];
   foreach($rows as $row) {
     if($row['phone']) {
-      $ontrack_phone = new OnTrackPhone($row['phone'], $row['site_id'], $row['language'], $row['syntax']);
+      $phone = VoipCall::NormalizeNumber($row['phone']);
+      $ontrack_phone = new OnTrackPhone($phone, $row['site_id'], $row['language'], $row['syntax']);
       $ontrack_phone->save();
     }
   }
