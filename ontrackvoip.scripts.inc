@@ -75,7 +75,7 @@ function ontrackvoip_voipscript_load_script($script_name, $options = NULL) {
         }
         $script->addSendText($text);
         //@todo: check server variable
-        //$script->addWait(1);
+        $script->addWait(2);
         $script->addLog("sending $text");
       }
       $script->addHangup();
