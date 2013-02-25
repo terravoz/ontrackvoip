@@ -36,7 +36,8 @@ function ontrackvoip_voipscript_load_script($script_name, $options = NULL) {
       $options['caller_number'] = '%caller_number';
       $options['dest_number'] = '%dest_number';
       $options['call_id'] = '%cid';
-      $options['language'] = 'en';
+      //$options['language'] = 'en';
+      $options['source'] = '%source';
       $script->addGosub('ontrackvoip_sms_process_request_script', $options);
       break;
 
@@ -74,8 +75,10 @@ function ontrackvoip_voipscript_load_script($script_name, $options = NULL) {
           $text = "(".$msg_number."/".$num_of_msg.") ".$text;
         }
         $script->addSendText($text);
-        //@todo: check server variable
-        $script->addWait(2);
+        if ($options['source'] == 'twilio') {
+          $script->addWait(2);
+        }
+
         $script->addLog("sending $text");
       }
       $script->addHangup();
