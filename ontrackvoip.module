@@ -1,5 +1,7 @@
 <?php
-// $Id$
+
+define('ONTRACK_VOIP_MAX_SMS_INTERVAL' , 10);
+
 /**
  * @file
  * Load OnTrack VoIP Scripts.

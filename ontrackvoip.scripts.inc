@@ -1,5 +1,4 @@
 <?php
-//@todo: twilio unicode characters http://forum.twilio.com/twilio/topics/spanish_sms_inbound_outbound
 
 /*
  * Tropo doesn't support special UTF chars in text messages.
@@ -28,7 +27,7 @@ function ontrackvoip_voipscript_load_script($script_name, $options = NULL) {
       $script = new VoipScript('ontrackvoip_sms_handler_script');
       // log the sms
       $log_msg = t("SMS from %caller_number on @date (id: %call_id)",
-        array('@date' => format_date(time())));
+        array('@date' => format_date(time(), 'custom', 'D, m/d/Y - H:i:s')));
       $script->addLog($log_msg, 'MDT');
 
       // below was the only way to avoid problems with special characters in the text message
@@ -36,15 +35,49 @@ function ontrackvoip_voipscript_load_script($script_name, $options = NULL) {
       $options['caller_number'] = '%caller_number';
       $options['dest_number'] = '%dest_number';
       $options['call_id'] = '%cid';
-      //$options['language'] = 'en';
       $options['source'] = '%source';
-      $script->addGosub('ontrackvoip_sms_process_request_script', $options);
+      $options['ontrackvoip_final_text'] = '%ontrackvoip_final_text';
+      //$script->addGosub('ontrackvoip_sms_process_request_script', $options);
+      $script->addGosub('ontrackvoip_sms_join_long_messages', $options);
       break;
+    case 'ontrackvoip_sms_join_long_messages':
+      $script = new VoipScript('ontrackvoip_sms_join_long_messages');
+      //Since we are dealing with sessions and sleep() command here any variables set here will not be stored
+      //instead we should save them directly via $voipcall object
+      //$script->addSet('ontrackvoip_final_text', $options['ontrackvoip_final_text'].$options['text']);
+      //$script->addSet('ontrackvoip_time_last_received', $time_current_text);
+      $script->addSet('full_sms_received',
+        "^_ontrackvoip_sms_handler(%cid)");
 
+      //If full sms is received continue
+      $script->addGotoIf('full_sms_received', "^%full_sms_received == 1");
+      //Otherwise exit. Note that we must exit instead of hangup otherwise the
+      //script variables will get overwritten with first message that gets out of sleep status
+      $script->addGoto('exit');
+
+      //Process full sms
+      $script->addLabel('full_sms_received');
+      $script->addSet('ontrackvoip_final_text',
+        "^_ontrackvoip_sms_set_final_text(%cid)");
+      $options['ontrackvoip_final_text'] = '%ontrackvoip_final_text';
+      $script->addGosub('ontrackvoip_sms_process_request_script', $options);
+      $script->addGoto('end');
+
+      //Exit and die
+      $script->addLabel('exit');
+      $script->addSet('full_sms_received',
+        "^_ontrackvoip_sms_exit()");
+
+      //Process end
+      $script->addLabel('end');
+      $script->addHangup();
+
+      break;
     case 'ontrackvoip_sms_process_request_script':
       //Helper script to process SMS request
       $script = new VoipScript('ontrackvoip_sms_process_request_script');
-      $result = _ontrackvoip_sms_process_request($options['text'], $options['caller_number'], $options['dest_number'], $options['call_id']);
+
+      $result = _ontrackvoip_sms_process_request($options['ontrackvoip_final_text'], $options['caller_number'], $options['dest_number'], $options['call_id']);
 
       if(strlen($result) == mb_strlen($result)) {
         // send response in chunks of 160 characters
@@ -67,7 +100,6 @@ function ontrackvoip_voipscript_load_script($script_name, $options = NULL) {
         $text_array = explode('\n', $tmp);
       }
       $num_of_msg = count($text_array);
-      watchdog('debug',"text ".print_r($text_array,true));
 
       foreach ($text_array as $index => $text) {
         if ($num_of_msg > 1) {
@@ -76,12 +108,13 @@ function ontrackvoip_voipscript_load_script($script_name, $options = NULL) {
         }
         $script->addSendText($text);
         if ($options['source'] == 'twilio') {
+          //Only Twilio supports Wait() cmd in text channel
           $script->addWait(2);
         }
 
         $script->addLog("sending $text");
       }
-      $script->addHangup();
+      //$script->addHangup();
       break;
   }
 
@@ -92,7 +125,7 @@ function ontrackvoip_voipscript_load_script($script_name, $options = NULL) {
  * Process incoming SMS messages
  */
 function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $call_id) {
-  //watchdog('ontrackvoip', "In _ontrackvoip_sms_process_request with $msg, $caller_number, $dest_number");
+  watchdog('ontrackvoip', "In _ontrackvoip_sms_process_request with $msg, $caller_number, $dest_number");
   global $language;
   $ontrack_phone = OnTrackPhone::load($dest_number);
   if (!$ontrack_phone) {
@@ -277,6 +310,46 @@ function ontrackvoip_create_ticket($ontrack_site, $ticket_text, $caller_number) 
   );
 
   return $ret;
+}
+
+function _ontrackvoip_sms_handler($cid){
+  $time_current_text = time();
+  $voipcall = VoipCall::load($cid);
+  $script = $voipcall->getScript();
+  $ontrackvoip_final_text =  $script->getVar('ontrackvoip_final_text'). $script->getVar('inbound_text_contents');
+  $script->setVar('ontrackvoip_final_text', $ontrackvoip_final_text);
+  watchdog('debug', "setting ontrackvoip_final_text $ontrackvoip_final_text");
+
+  $script->setVar('ontrackvoip_time_last_received', $time_current_text);
+  $voipcall->setScript($script);
+  $voipcall->save();
+
+  $sleep_time = ONTRACK_VOIP_MAX_SMS_INTERVAL + 1;
+  sleep($sleep_time);
+  watchdog('debug', "in ontrackvoip_sms_handler with $cid, $time_current_text");
+watchdog('debug', "wake up after $sleep_time");
+
+  $voipcall = VoipCall::load($cid);
+  $script = $voipcall->getScript();
+   if ($time_current_text == $script->getVar('ontrackvoip_time_last_received')) {
+     watchdog('debug', "full sms received time_current_text ".$script->getVar('ontrackvoip_time_last_received'));
+     return TRUE;
+   }
+  else {
+    watchdog('debug', "not full $time_current_text ".$script->getVar('ontrackvoip_time_last_received'));
+  }
+  return FALSE;
+}
+
+function _ontrackvoip_sms_exit(){
+  die();
+}
+
+function _ontrackvoip_sms_set_final_text($cid) {
+  $voipcall = VoipCall::load($cid);
+  $script = $voipcall->getScript();
+  watchdog('debug', "ontrackvoip_final_text ".$script->getVar('ontrackvoip_final_text'));
+  return $script->getVar('ontrackvoip_final_text');
 }
 
 
