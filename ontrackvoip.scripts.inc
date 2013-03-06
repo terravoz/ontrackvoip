@@ -87,7 +87,6 @@ function ontrackvoip_voipscript_load_script($script_name, $options = NULL) {
         //This is unicode SMS, can only contain 70 chars
         $char_limit = 70;
       }
-      watchdog('debug',"charleng $char_limit");
       // send response in chunks of $char_limit characters
       if (strlen($result) <= $char_limit) {
         $text_array[] = $result;
@@ -318,26 +317,19 @@ function _ontrackvoip_sms_handler($cid){
   $script = $voipcall->getScript();
   $ontrackvoip_final_text =  $script->getVar('ontrackvoip_final_text'). $script->getVar('inbound_text_contents');
   $script->setVar('ontrackvoip_final_text', $ontrackvoip_final_text);
-  watchdog('debug', "setting ontrackvoip_final_text $ontrackvoip_final_text");
-
   $script->setVar('ontrackvoip_time_last_received', $time_current_text);
   $voipcall->setScript($script);
   $voipcall->save();
 
   $sleep_time = ONTRACK_VOIP_MAX_SMS_INTERVAL + 1;
   sleep($sleep_time);
-  watchdog('debug', "in ontrackvoip_sms_handler with $cid, $time_current_text");
-watchdog('debug', "wake up after $sleep_time");
 
   $voipcall = VoipCall::load($cid);
   $script = $voipcall->getScript();
    if ($time_current_text == $script->getVar('ontrackvoip_time_last_received')) {
-     watchdog('debug', "full sms received time_current_text ".$script->getVar('ontrackvoip_time_last_received'));
      return TRUE;
    }
-  else {
-    watchdog('debug', "not full $time_current_text ".$script->getVar('ontrackvoip_time_last_received'));
-  }
+  #Else:
   return FALSE;
 }
 
@@ -348,7 +340,6 @@ function _ontrackvoip_sms_exit(){
 function _ontrackvoip_sms_set_final_text($cid) {
   $voipcall = VoipCall::load($cid);
   $script = $voipcall->getScript();
-  watchdog('debug', "ontrackvoip_final_text ".$script->getVar('ontrackvoip_final_text'));
   return $script->getVar('ontrackvoip_final_text');
 }
 
