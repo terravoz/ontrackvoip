@@ -36,48 +36,13 @@ function ontrackvoip_voipscript_load_script($script_name, $options = NULL) {
       $options['dest_number'] = '%dest_number';
       $options['call_id'] = '%cid';
       $options['source'] = '%source';
-      $options['ontrackvoip_final_text'] = '%ontrackvoip_final_text';
-      //$script->addGosub('ontrackvoip_sms_process_request_script', $options);
-      $script->addGosub('ontrackvoip_sms_join_long_messages', $options);
-      break;
-    case 'ontrackvoip_sms_join_long_messages':
-      $script = new VoipScript('ontrackvoip_sms_join_long_messages');
-      //Since we are dealing with sessions and sleep() command here any variables set here will not be stored
-      //instead we should save them directly via $voipcall object
-      //$script->addSet('ontrackvoip_final_text', $options['ontrackvoip_final_text'].$options['text']);
-      //$script->addSet('ontrackvoip_time_last_received', $time_current_text);
-      $script->addSet('full_sms_received',
-        "^_ontrackvoip_sms_handler(%cid)");
-
-      //If full sms is received continue
-      $script->addGotoIf('full_sms_received', "^%full_sms_received == 1");
-      //Otherwise exit. Note that we must exit instead of hangup otherwise the
-      //script variables will get overwritten with first message that gets out of sleep status
-      $script->addGoto('exit');
-
-      //Process full sms
-      $script->addLabel('full_sms_received');
-      $script->addSet('ontrackvoip_final_text',
-        "^_ontrackvoip_sms_set_final_text(%cid)");
-      $options['ontrackvoip_final_text'] = '%ontrackvoip_final_text';
       $script->addGosub('ontrackvoip_sms_process_request_script', $options);
-      $script->addGoto('end');
-
-      //Exit and die
-      $script->addLabel('exit');
-      $script->addSet('full_sms_received',
-        "^_ontrackvoip_sms_exit()");
-
-      //Process end
-      $script->addLabel('end');
-      $script->addHangup();
-
       break;
     case 'ontrackvoip_sms_process_request_script':
       //Helper script to process SMS request
       $script = new VoipScript('ontrackvoip_sms_process_request_script');
 
-      $result = _ontrackvoip_sms_process_request($options['ontrackvoip_final_text'], $options['caller_number'], $options['dest_number'], $options['call_id']);
+      $result = _ontrackvoip_sms_process_request($options['text'], $options['caller_number'], $options['dest_number'], $options['call_id']);
 
       if(strlen($result) == mb_strlen($result)) {
         // send response in chunks of 160 characters
@@ -113,7 +78,7 @@ function ontrackvoip_voipscript_load_script($script_name, $options = NULL) {
 
         $script->addLog("sending $text");
       }
-      //$script->addHangup();
+      $script->addHangup();
       break;
   }
 
@@ -310,39 +275,6 @@ function ontrackvoip_create_ticket($ontrack_site, $ticket_text, $caller_number) 
 
   return $ret;
 }
-
-function _ontrackvoip_sms_handler($cid){
-  $time_current_text = time();
-  $voipcall = VoipCall::load($cid);
-  $script = $voipcall->getScript();
-  $ontrackvoip_final_text =  $script->getVar('ontrackvoip_final_text'). $script->getVar('inbound_text_contents');
-  $script->setVar('ontrackvoip_final_text', $ontrackvoip_final_text);
-  $script->setVar('ontrackvoip_time_last_received', $time_current_text);
-  $voipcall->setScript($script);
-  $voipcall->save();
-
-  $sleep_time = ONTRACK_VOIP_MAX_SMS_INTERVAL + 1;
-  sleep($sleep_time);
-
-  $voipcall = VoipCall::load($cid);
-  $script = $voipcall->getScript();
-   if ($time_current_text == $script->getVar('ontrackvoip_time_last_received')) {
-     return TRUE;
-   }
-  #Else:
-  return FALSE;
-}
-
-function _ontrackvoip_sms_exit(){
-  die();
-}
-
-function _ontrackvoip_sms_set_final_text($cid) {
-  $voipcall = VoipCall::load($cid);
-  $script = $voipcall->getScript();
-  return $script->getVar('ontrackvoip_final_text');
-}
-
 
 function remove_accents($string) {
   if (!preg_match('/[\x80-\xff]/', $string))
