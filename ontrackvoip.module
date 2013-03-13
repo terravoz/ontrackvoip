@@ -57,7 +57,8 @@ function ontrackvoip_admin_settings_form($form, &$form_state) {
   $form['wrapper']['description'] = array(
     '#type' => 'markup',
     '#markup' => '<div><b>Phone number: </b><span>Phone number must be formatted
-     with a \'+\' and country code, e.g. +16175551212
+     with a \'+\' and country code, e.g. +16175551212 for U.S. numbers,
+     +661136667790 for Brazil, etc. according to the E.164 international number standard.
     (<a target="_blank" href="http://en.wikipedia.org/wiki/E.164">E.164</a>)
     </span></div>
     <div><b>Phone Number Language: </b><span>This is the default language to be
