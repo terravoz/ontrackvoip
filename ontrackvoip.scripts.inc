@@ -95,7 +95,9 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
   if (!$ontrack_phone) {
     //@todo: error message when ontrack phone not recognized
     ontrackvoip_log("Destination number $dest_number not recognized.");
-    return '';
+    return t("Destination number !dest_number not recognized.", array(
+      '!dest_number' => $dest_number,
+    ));
   }
 
   //Get either a default phone number language or default site language.
