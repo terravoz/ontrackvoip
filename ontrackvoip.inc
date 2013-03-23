@@ -15,7 +15,13 @@ class OnTrackSite {
     $this->site_id = $site_id;
     $site_list = ontrack_get_site_list();
     $this->site_name = isset($site_list[$this->site_id]) ? $site_list[$this->site_id]['title'] : '';
-    $this->site_language = isset($site_list[$this->site_id]) ? $site_list[$this->site_id]['language'] : '';
+
+    if(isset($site_list[$this->site_id]) && $site_list[$this->site_id]['language'] != 'und') {
+      $this->site_language =  $site_list[$this->site_id]['language'];
+    }
+    else {
+      $this->site_language = '';
+    }
   }
 
   function getSiteId() {

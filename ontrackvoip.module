@@ -260,3 +260,18 @@ function ontrackvoip_log($message) {
   watchdog('ontrackvoip', $message);
 }
 
+function ontrackvoip_sms_envaya_incoming($action) {
+  if ($action->message_type == 'call') {
+    watchdog('debug', 'in ontrackvoip_sms_envaya_incoming'.print_r($action,true));
+    sleep(40);
+
+    $call = new VoipCall();
+    //$dest_number = VoipCall::NormalizeNumber($action->from);
+    $dest_number = $action->from;
+    $call->setDestNumber($dest_number);
+    $call->setCallerName('SMS Envaya');
+    $call->save();
+    // Dial the call.
+    voip_dial($call);
+  }
+}

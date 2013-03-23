@@ -101,7 +101,7 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
   }
 
   //Get either a default phone number language or default site language.
-  $default_langcode = isset($ontrack_phone) ? $ontrack_phone->getLanguage() : $language->language;
+  $default_langcode = !empty($ontrack_phone) ? $ontrack_phone->getLanguage() : $language->language;
   $langcode = $default_langcode;
   //watchdog('ontrackvoip', "Default language $default_langcode");
   if ($ontrack_phone->getSyntax() == 'retrieve') {
@@ -150,7 +150,7 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
           $ontrack_site = new OnTrackSite($site_id);
           $site_langcode = $ontrack_site->getSiteLanguage();
           //Use site language, if not set use phone number languaage
-          $langcode = isset($site_langcode) ? $site_langcode : $default_langcode;
+          $langcode = !empty($site_langcode) ? $site_langcode : $default_langcode;
           //watchdog('ontrackvoip', "Using site language $langcode");
           $site_name = $ontrack_site->getSiteName();
         }
@@ -207,7 +207,10 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
           if ($ontrack_phone->getSyntax() == 'retrieve') {
             //This SMS number is set to retrieve id from dest_number so create ticket
             $ticket_text = $msg;
-            $ret = ontrackvoip_create_ticket($ontrack_site, $ticket_text, $caller_number);
+            $site_langcode = $ontrack_site->getSiteLanguage();
+            //Use site language, if not set use phone number languaage
+            $langcode = !empty($site_langcode) ? $site_langcode : $default_langcode;
+            $ret = ontrackvoip_create_ticket($ontrack_site, $ticket_text, $caller_number, $langcode);
             return $ret;
           }
         }
@@ -223,8 +226,11 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
             $ontrack_site = new OnTrackSite($site_id);
             //Create new ticket
             unset($request[0]); //remove site_id from ticket_text
+            $site_langcode = $ontrack_site->getSiteLanguage();
+            //Use site language, if not set use phone number languaage
+            $langcode = !empty($site_langcode) ? $site_langcode : $default_langcode;
             $ticket_text = implode(" ", $request);
-            $ret = ontrackvoip_create_ticket($ontrack_site, $ticket_text, $caller_number);
+            $ret = ontrackvoip_create_ticket($ontrack_site, $ticket_text, $caller_number, $langcode);
           }
           else {
             //Invalid site id
@@ -257,8 +263,7 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
 }
 
 /*Helper function to create ticket and return appropriate response*/
-function ontrackvoip_create_ticket($ontrack_site, $ticket_text, $caller_number) {
-  $langcode = $ontrack_site->getSiteLanguage();
+function ontrackvoip_create_ticket($ontrack_site, $ticket_text, $caller_number, $langcode) {
   //watchdog('ontrackvoip', "Using site language $langcode");
   $site_name = $ontrack_site->getSiteName();
   $site_id = $ontrack_site->getSiteId();

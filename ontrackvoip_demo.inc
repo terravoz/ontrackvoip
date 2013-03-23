@@ -61,11 +61,11 @@ function ontrack_get_site_list() {
     $sites[$i]['site_id'] = $i;
     if($i>5) {
       $sites[$i]['title'] = 'aSite '.$i;
-      $sites[$i]['language'] = 'es';
+      $sites[$i]['language'] = 'und';
     }
     else {
       $sites[$i]['title'] = 'bSite '.$i;
-      $sites[$i]['language'] = 'en';
+      $sites[$i]['language'] = 'und';
     }
   }
 
