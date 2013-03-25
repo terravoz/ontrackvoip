@@ -262,9 +262,8 @@ function ontrackvoip_log($message) {
 
 function ontrackvoip_sms_envaya_incoming($action) {
   if ($action->message_type == 'call') {
-    watchdog('debug', 'in ontrackvoip_sms_envaya_incoming'.print_r($action,true));
-    sleep(40);
-
+    //watchdog('debug', 'in ontrackvoip_sms_envaya_incoming'.print_r($action,true));
+    sleep(10);
     $call = new VoipCall();
     //$dest_number = VoipCall::NormalizeNumber($action->from);
     $dest_number = $action->from;
