@@ -174,7 +174,7 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
           $ret = t("Request !ticket_id status: !ticket_state.",
             array(
               '!ticket_id' => $ticket_id,
-              '!ticket_state' => ontrack_get_ticket_status_description_from_code($ticket->state),
+              '!ticket_state' => ontrack_get_ticket_status_description_from_code($ticket->state, $langcode),
             ),
             array(
               'langcode' => $langcode,

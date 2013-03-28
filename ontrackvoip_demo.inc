@@ -72,6 +72,6 @@ function ontrack_get_site_list() {
   return $sites;
 }
 
-function ontrack_get_ticket_status_description_from_code($state) {
+function ontrack_get_ticket_status_description_from_code($state, $langcode) {
   return 'New';
 }
