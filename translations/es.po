@@ -43,7 +43,7 @@ msgstr "Ticket !ticket_id no válido. Por favor, intenta de nuevo con un número
 
 #: ontrackvoip.scripts.inc:152
 msgid "Request !ticket_id status: !ticket_state."
-msgstr "Solicitar estado del ticekt !ticket_id: !ticket_state"
+msgstr "Solicitar estado del ticket !ticket_id: !ticket_state"
 
 #: ontrackvoip.scripts.inc:163
 msgid "!site_name. You are not authorized to access request !ticket_id. For additional information, please contact the site administrator."
