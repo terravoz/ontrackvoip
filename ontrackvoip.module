@@ -265,8 +265,11 @@ function ontrackvoip_sms_envaya_incoming($action) {
     //watchdog('debug', 'in ontrackvoip_sms_envaya_incoming'.print_r($action,true));
     sleep(10);
     $call = new VoipCall();
-    //$dest_number = VoipCall::NormalizeNumber($action->from);
     $dest_number = $action->from;
+    $gateway_number = $action->request->phone_number;
+    $op = 'e.164';
+    drupal_alter('voip_number', $dest_number, $op, $gateway_number);
+    watchdog('debug' ,"voice normalized number $number");
     $call->setDestNumber($dest_number);
     $call->setCallerName('SMS Envaya');
     $call->save();
@@ -274,3 +277,5 @@ function ontrackvoip_sms_envaya_incoming($action) {
     voip_dial($call);
   }
 }
+
+
