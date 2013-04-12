@@ -140,60 +140,7 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
       if (is_numeric($msg_temp)) {
         //If message is numeric then this is GET request
         $ticket_id = $msg_temp;
-        $author_uid = ontrack_get_uid_from_phone($caller_number);
-        $author = user_load($author_uid);
-        $ticket_data = ontrack_get_ticket($ticket_id);
-        if($ticket_data) {
-          $site_id = $ticket_data['site_node']->nid;
-          $ticket = $ticket_data['ticket_node'];
-
-          $ontrack_site = new OnTrackSite($site_id);
-          $site_langcode = $ontrack_site->getSiteLanguage();
-          //Use site language, if not set use phone number languaage
-          $langcode = !empty($site_langcode) ? $site_langcode : $default_langcode;
-          //watchdog('ontrackvoip', "Using site language $langcode");
-          $site_name = $ontrack_site->getSiteName();
-        }
-
-        if(!$ticket) {
-          $ret = t("Invalid request id !ticket_id. Please try again with a different one.",
-            array(
-              '!ticket_id' => $ticket_id,
-            ),
-            array(
-              'langcode' => $default_langcode,
-            )
-        );
-          //log the error
-          ontrackvoip_log($ticket_id . " is not a valid ticket. Call ID: ".$call_id);
-        }
-        else if($ticket->uid == $author_uid || ontrackvoip_is_ticket_manager($author)) {
-          //the following users might have permission to check a given ticket:
-          //a) the user calling from the phone number that created the ticket
-          //b) users with the "Ticket Manager" role
-          $ret = t("Request !ticket_id status: !ticket_state.",
-            array(
-              '!ticket_id' => $ticket_id,
-              '!ticket_state' => ontrack_get_ticket_status_description_from_code($ticket->state, $langcode),
-            ),
-            array(
-              'langcode' => $langcode,
-            ));
-        }
-        else {
-          //This user is not authorized to access the ticket
-          $ret = t("!site_name. You are not authorized to access request !ticket_id. For additional information, please contact the site administrator.",
-            array(
-              '!ticket_id' => $ticket_id,
-              '!site_name' => $site_name,
-            ),
-            array(
-              'langcode' => $langcode
-            )
-          );
-          //log the error
-          ontrackvoip_log("Unauthorized access attempted by ".$caller_number . " for request " . $ticket_id.". Call ID: ".$call_id);
-        }
+        $ret = ontrackvoip_retrieve_ticket($caller_number, $ticket_id, $call_id, $default_langcode);
       }
       else{
         //Else this is CREATE request
@@ -279,6 +226,65 @@ function ontrackvoip_create_ticket($ontrack_site, $ticket_text, $caller_number, 
       'langcode' => $langcode
     )
   );
+
+  return $ret;
+}
+
+function ontrackvoip_retrieve_ticket($caller_number, $ticket_id, $call_id, $default_langcode) {
+  $author_uid = ontrack_get_uid_from_phone($caller_number);
+  $author = user_load($author_uid);
+  $ticket_data = ontrack_get_ticket($ticket_id);
+  if($ticket_data) {
+    $site_id = $ticket_data['site_node']->nid;
+    $ticket = $ticket_data['ticket_node'];
+
+    $ontrack_site = new OnTrackSite($site_id);
+    $site_langcode = $ontrack_site->getSiteLanguage();
+    //Use site language, if not set use phone number languaage
+    $langcode = !empty($site_langcode) ? $site_langcode : $default_langcode;
+    //watchdog('ontrackvoip', "Using site language $langcode");
+    $site_name = $ontrack_site->getSiteName();
+  }
+
+  if(!$ticket) {
+    $ret = t("Invalid request id !ticket_id. Please try again with a different one.",
+      array(
+        '!ticket_id' => $ticket_id,
+      ),
+      array(
+        'langcode' => $default_langcode,
+      )
+    );
+    //log the error
+    ontrackvoip_log($ticket_id . " is not a valid ticket. Call ID: ".$call_id);
+  }
+  else if($ticket->uid == $author_uid || ontrackvoip_is_ticket_manager($author)) {
+    //the following users might have permission to check a given ticket:
+    //a) the user calling from the phone number that created the ticket
+    //b) users with the "Ticket Manager" role
+    $ret = t("Request !ticket_id status: !ticket_state.",
+      array(
+        '!ticket_id' => $ticket_id,
+        '!ticket_state' => ontrack_get_ticket_status_description_from_code($ticket->state, $langcode),
+      ),
+      array(
+        'langcode' => $langcode,
+      ));
+  }
+  else {
+    //This user is not authorized to access the ticket
+    $ret = t("!site_name. You are not authorized to access request !ticket_id. For additional information, please contact the site administrator.",
+      array(
+        '!ticket_id' => $ticket_id,
+        '!site_name' => $site_name,
+      ),
+      array(
+        'langcode' => $langcode
+      )
+    );
+    //log the error
+    ontrackvoip_log("Unauthorized access attempted by ".$caller_number . " for request " . $ticket_id.". Call ID: ".$call_id);
+  }
 
   return $ret;
 }

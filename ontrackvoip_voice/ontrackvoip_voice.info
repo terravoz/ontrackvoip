@@ -1,0 +1,18 @@
+; $Id$
+core = 7.x
+description = "OnTrack VoIP Drupal Voice integration"
+name = "OnTrack VoIP Voice"
+package = "VoIP Drupal"
+dependencies[] = audiofield
+dependencies[] = audiorecorderfield
+dependencies[] = features
+dependencies[] = field_sql_storage
+dependencies[] = file
+dependencies[] = list
+dependencies[] = node
+dependencies[] = options
+dependencies[] = ontrackvoip
+features[features_api][] = api:1
+features[field][] = node-ontrack_voice-field_ontrackvoice_audio
+features[field][] = node-ontrack_voice-field_ontrackvoice_type
+features[node][] = ontrack_voice
