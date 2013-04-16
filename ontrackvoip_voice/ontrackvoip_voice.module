@@ -25,11 +25,12 @@ function ontrackvoip_voice_voipscript_load_script($script_name, $options = NULL)
       $script->addSay(t('Welcome to the On Track system.'));
 
       $script->addLabel('main_menu');
-      $options_menu = t('Main menu.  To report an issue, dial 1. To record a story, dial 2. To record a suggestion, dial 3. To check the status of an existing ticket, dial the star key.');
+      $options_menu = t('Main menu.  To report an issue, dial 1. To record a story, dial 2. To record a suggestion, dial 3. To listen to the latest audio recordings, dial 4. To check the status of an existing ticket, dial the star key.');
       $input_options = array(
         '1' => 'report_issue',
         '2' => 'record_story',
         '3' => 'record_suggestion',
+        '4' => 'play',
         '*' => 'ticket_status',
         '#' => 'hang up',
         'i' => 'hang up',
@@ -49,6 +50,10 @@ function ontrackvoip_voice_voipscript_load_script($script_name, $options = NULL)
 
       $script->addLabel('record_suggestion');
       $script->addGosub('ontrack_record_suggestion');
+      $script->addGoto('hang up');
+
+      $script->addLabel('play');
+      $script->addGosub('ontrack_play_script');
       $script->addGoto('hang up');
 
       $script->addLabel('ticket_status');
@@ -108,6 +113,59 @@ function ontrackvoip_voice_voipscript_load_script($script_name, $options = NULL)
       break;
     case 'ontrack_record_suggestion':
       $script = _ontrackvoip_voice_get_record_script('suggestion');
+      break;
+    case 'ontrack_play_script':
+      //Helper script that provides play menu for Audio blogs.
+      $script = new VoipScript('ontrack_play_script');
+      $script->addSetVoice('woman');
+      voipvoice_set_current_voice('woman');
+
+      $recordings = _ontrackvoip_voice_get_recordings();
+      if (!$recordings) {
+        $script->addSay(v('There are no audio recordings at this time. '));
+      }
+      else {
+        $script->addSay(v('During playback, press any key to go to the OnTrack menu. '));
+        foreach ($recordings as $index => $blog) {
+          $body = $blog['body'];
+
+          $args = array('@date' => VoipVoice::getDate($blog['changed']), '@time' => date("g:i a", $blog['changed']));
+          $info = v('This audio recording was created on @date at @time', $args);
+          $current = "ontrackvoip_rec_$index";
+          $current_info = "info_$index";
+          $next = 'ontrackvoip_rec_' . ($index+1);
+
+          $script->addLabel($current);
+          $script->addGetInput($body, 1, '#', 3);
+
+          $script->addLabel('playback_menu');
+          $p_options_menu = v('To replay the current audio recording, press 1. To listen to the additional information about this audio recording press 2. To go to the next audio recording, press 3. To go back to the main menu, press the pound key. ');
+          $input_options = array(
+            '1' => $current,
+            '2' => $current_info,
+            '3' => $next,
+            '#' => 'go_back',
+          );
+          $p_invalid_msg = v('Invalid option selected');
+          $script->addRunIvrMenu($p_options_menu, $input_options, $p_invalid_msg);
+          $script->addGoto('%ivr_option_selected');
+
+          $script->addLabel($current_info);
+          $script->addSay($info);
+          $script->addGoto('playback_menu');
+        }
+      }
+
+      $no_more = count($recordings);
+      $script->addLabel("ontrackvoip_rec_$no_more");
+      $script->addSay(v('No more audio recordings to be played. '));
+      $script->addGoto('go_back');
+
+      $script->addLabel('invalid_option');
+      $script->addGoto('go_back');
+
+      $script->addLabel('go_back');
+      $script->addReturn();
       break;
   }
   return $script;
@@ -217,4 +275,33 @@ function _ontrackvoip_voice_create_node($recording_fid, $type) {
   // create the node
   node_save($node);
   return $node;
+}
+
+/*
+* Returns array of OnTrack Voice nodes
+*/
+function _ontrackvoip_voice_get_recordings() {
+  $recordings = array();
+
+  $result = db_select('node', 'n')
+    ->fields('n', array('nid'))
+    ->condition('type', 'ontrack_voice')
+    ->condition('status', 0, '<>')
+    ->orderBy('changed', 'DESC')
+    ->execute();
+
+  foreach ($result as $o) {
+    $n = node_load($o->nid);
+    $field_audio = $n->field_ontrackvoice_audio;
+    if ($field_audio['und'][0]) {
+      $audio_url = file_create_url($field_audio['und'][0]['uri']);
+      $recording = array();
+      $recording['nid'] = $n->nid;
+      $recording['changed'] = $n->changed;
+      $recording['body'] = $audio_url;
+      $recordings[] = $recording;
+    }
+  }
+
+  return $recordings;
 }
