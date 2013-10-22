@@ -53,14 +53,14 @@ function ontrackvoip_voipscript_load_script($script_name, $options = NULL) {
         $char_limit = 70;
       }
       // send response in chunks of $char_limit characters
-      if (strlen($result) <= $char_limit) {
+      if (mb_strlen($result) <= $char_limit) {
         $text_array[] = $result;
       }
       else {
         /// lets use 154 characters and keep room for message number like (1/10),
         /// we can have upto 9 parts of the message (9/9)
         $limit = $char_limit - 6;
-        $tmp = wordwrap($result, $limit, '\n');
+        $tmp = ontrack_mb_wordwrap($result, $limit, '\n');
         $text_array = explode('\n', $tmp);
       }
       $num_of_msg = count($text_array);
@@ -145,11 +145,12 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
       else{
         //Else this is CREATE request
         //Get array of valid site_ids for this SMS number
-        $valid_site_ids = $ontrack_phone->getSiteIds();
-        if (count($valid_site_ids) == 1) {
+        //$valid_site_ids = $ontrack_phone->getSiteIds();
+        $valid_extension_ids = $ontrack_phone->getExtensionIds();
+        if (count($valid_extension_ids) == 1) {
           //There is just one matching site for this SMS number, check
           //if its using retrieve SMS syntax
-          $site_id = reset($valid_site_ids);
+          $site_id = reset($valid_extension_ids);
           $ontrack_site = new OnTrackSite($site_id);
           if ($ontrack_phone->getSyntax() == 'retrieve') {
             //This SMS number is set to retrieve id from dest_number so create ticket
@@ -168,7 +169,7 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
         if (is_numeric($site_id)) {
           //SMS syntax: embedded site id
           //Check if site_id is valid
-          if (isset($valid_site_ids[$site_id])) {
+          if (isset($valid_extension_ids[$site_id])) {
             //Load site object for further info like language, site name,...
             $ontrack_site = new OnTrackSite($site_id);
             //Create new ticket
@@ -213,10 +214,12 @@ function _ontrackvoip_sms_process_request($msg, $caller_number, $dest_number, $c
 function ontrackvoip_create_ticket($ontrack_site, $ticket_text, $caller_number, $langcode) {
   //watchdog('ontrackvoip', "Using site language $langcode");
   $site_name = $ontrack_site->getSiteName();
-  $site_id = $ontrack_site->getSiteId();
+  //$site_id = $ontrack_site->getSiteId();
+  $nid = $ontrack_site->getNid();
 
   //Create new ticket
-  $ticket_id = ontrack_create_ticket_from_sms($site_id, $ticket_text, $caller_number);
+  //@todo: replaced site_id with nid. Test
+  $ticket_id = ontrack_create_ticket_from_sms($nid, $ticket_text, $caller_number);
   $ret = t("!site_name. New request created with id !ticket_id. Please use that id in further inquiries about this ticket.",
     array(
       '!ticket_id' => $ticket_id,
@@ -235,7 +238,10 @@ function ontrackvoip_retrieve_ticket($caller_number, $ticket_id, $call_id, $defa
   $author = user_load($author_uid);
   $ticket_data = ontrack_get_ticket($ticket_id);
   if($ticket_data) {
-    $site_id = $ticket_data['site_node']->nid;
+    //$site_id = $ticket_data['site_node']->nid;
+    $node = node_load($ticket_data['site_node']->nid);
+    $extension = field_get_items('node', $node, 'field_extension');
+    $site_id = $extension[0]['value'];
     $ticket = $ticket_data['ticket_node'];
 
     $ontrack_site = new OnTrackSite($site_id);

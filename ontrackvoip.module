@@ -64,7 +64,8 @@ function ontrackvoip_admin_settings_form($form, &$form_state) {
     <div><b>Phone Number Language: </b><span>This is the default language to be
     used when there is no site context, like in error messages. Otherwise, the site
     language will overwrite this value.</span></div>
-     <div><b>Site ID: </b><span>The site(s) associated with the phone number. You might choose one or more depending on the case.</span></div>',
+     <div><b>Site List: </b><span>The site(s) associated with the phone number. You might choose one or more depending on the case.
+     <a href="'.url('ontrackvoip-extension-directory',array('absolute'=>true)).'">Click here</a> to manage site extensions.</span></div>',
   );
   //Load existing Ontrack sites
   $ontrack_phones = OnTrackPhone::loadAll();
@@ -89,8 +90,8 @@ function ontrackvoip_admin_settings_form($form, &$form_state) {
   //Build site list from ontrack_get_site_list
   $sites = ontrack_get_site_list();
   //$site_list[''] = '<none>';
-  foreach($sites as $site_id => $site) {
-    $site_list[$site_id] = $site['title']." (Site ID:$site_id)";
+  foreach($sites as $nid => $site) {
+    $site_list[$nid] = $site['title']." (Site Extension:".$site['id'].")";
   }
 
   //Sort alphabetically
@@ -122,7 +123,7 @@ function ontrackvoip_admin_settings_form($form, &$form_state) {
 
     $form['wrapper']['field']['field_'.$i]['site_id'] = array(
       '#prefix' => '<td>',
-      '#title' => t('Site ID'),
+      '#title' => t('Site List'),
       '#type' => 'select',
       '#size' => 5,
       '#multiple' => TRUE,
@@ -144,8 +145,8 @@ function ontrackvoip_admin_settings_form($form, &$form_state) {
       '#prefix' => '<td>',
       '#title' => t('SMS Syntax'),
       '#type' => 'select',
-      '#options' => array('embedded' => t('use embedded site id in SMS ticket creation requests'),
-      'retrieve' => t('retrieve site id based on the site telephone number')),
+      '#options' => array('embedded' => t('use embedded site extension in SMS ticket creation requests'),
+      'retrieve' => t('retrieve site extension based on the site telephone number')),
       '#default_value' => (isset($ontrack_phone)) ? $ontrack_phone->getSyntax() : '',
       '#suffix' => $suffix.'</td></tr>',
     );
@@ -259,23 +260,87 @@ function ontrackvoip_is_ticket_manager($account) {
 function ontrackvoip_log($message) {
   watchdog('ontrackvoip', $message);
 }
-
+//@todo: move to ontrackvoip_voice?
 function ontrackvoip_sms_envaya_incoming($action) {
   if ($action->message_type == 'call') {
-    //watchdog('debug', 'in ontrackvoip_sms_envaya_incoming'.print_r($action,true));
+    watchdog('debug', 'in ontrackvoip_sms_envaya_incoming'.print_r($action,true));
     sleep(10);
     $call = new VoipCall();
     $dest_number = $action->from;
     $gateway_number = $action->request->phone_number;
     $op = 'e.164';
     drupal_alter('voip_number', $dest_number, $op, $gateway_number);
-    watchdog('debug' ,"voice normalized number $number");
+    watchdog('debug' ,"voice normalized number $dest_number");
     $call->setDestNumber($dest_number);
     $call->setCallerName('SMS Envaya');
     $call->save();
     // Dial the call.
     voip_dial($call);
   }
+}
+
+function ontrack_mb_wordwrap($str, $width=74, $break="\r\n")
+{
+  // Return short or empty strings untouched
+  if(empty($str) || mb_strlen($str, 'UTF-8') <= $width)
+    return $str;
+
+  $br_width  = mb_strlen($break, 'UTF-8');
+  $str_width = mb_strlen($str, 'UTF-8');
+  $return = '';
+  $last_space = false;
+
+  for($i=0, $count=0; $i < $str_width; $i++, $count++)
+  {
+    // If we're at a break
+    if (mb_substr($str, $i, $br_width, 'UTF-8') == $break)
+    {
+      $count = 0;
+      $return .= mb_substr($str, $i, $br_width, 'UTF-8');
+      $i += $br_width - 1;
+      continue;
+    }
+
+    // Keep a track of the most recent possible break point
+    if(mb_substr($str, $i, 1, 'UTF-8') == " ")
+    {
+      $last_space = $i;
+    }
+
+    // It's time to wrap
+    if ($count > $width)
+    {
+      // There are no spaces to break on!  Going to truncate :(
+      if(!$last_space)
+      {
+        $return .= $break;
+        $count = 0;
+      }
+      else
+      {
+        // Work out how far back the last space was
+        $drop = $i - $last_space;
+
+        // Cutting zero chars results in an empty string, so don't do that
+        if($drop > 0)
+        {
+          $return = mb_substr($return, 0, -$drop);
+        }
+
+        // Add a break
+        $return .= $break;
+
+        // Update pointers
+        $i = $last_space + ($br_width - 1);
+        $last_space = false;
+        $count = 0;
+      }
+    }
+
+    // Add character from the input string to the output
+    $return .= mb_substr($str, $i, 1, 'UTF-8');
+  }
+  return $return;
 }
 
 

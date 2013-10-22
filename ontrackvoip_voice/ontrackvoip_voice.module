@@ -21,11 +21,12 @@ function ontrackvoip_voice_voipscript_load_script($script_name, $options = NULL)
       break;
 
     case 'ontrack_voice_menu':
+      voipvoice_set_current_voice('ontrack');
       $script = new VoipScript('ontrack_voice_menu');
-      $script->addSay(t('Welcome to the On Track system.'));
+      $script->addSay(v('Welcome to the On Track system.'));
 
       $script->addLabel('main_menu');
-      $options_menu = t('Main menu.  To report an issue, dial 1. To record a story, dial 2. To record a suggestion, dial 3. To listen to the latest audio recordings, dial 4. To check the status of an existing ticket, dial the star key.');
+      $options_menu = v('Main menu.  To report an issue, dial 1. To record a story, dial 2. To record a suggestion, dial 3. To listen to the latest audio recordings, dial 4. To check the status of an existing ticket, dial the star key.');
       $input_options = array(
         '1' => 'report_issue',
         '2' => 'record_story',
@@ -36,7 +37,7 @@ function ontrackvoip_voice_voipscript_load_script($script_name, $options = NULL)
         'i' => 'hang up',
         't' => 'hang up',
       );
-      $invalid_msg = t('Invalid option selected.');
+      $invalid_msg = v('Invalid option selected');
       $script->addRunIvrMenu($options_menu, $input_options, $invalid_msg);
       $script->addGoto('%ivr_option_selected');
 
@@ -61,10 +62,11 @@ function ontrackvoip_voice_voipscript_load_script($script_name, $options = NULL)
       $script->addGoto('hang up');
 
       $script->addLabel('hang up');
-      $script->addSay(t('Thanks for using the On Track Hotline. Goodbye.'));
+      $script->addSay(v('Thanks for using the On Track Hotline. Goodbye.'));
       $script->addHangup();
       break;
     case 'ontrack_ticket_status':
+      voipvoice_set_current_voice('ontrack');
       $script = new VoipScript('ticket_status');
       $script->addLabel('ticket_id');
       $prompt = v("Enter the ticket id. Press the pound sign when done. ");
@@ -82,6 +84,7 @@ function ontrackvoip_voice_voipscript_load_script($script_name, $options = NULL)
       break;
     case 'ontrack_ticket_status_retrieve':
       global $language;
+      voipvoice_set_current_voice('ontrack');
       $script = new VoipScript('ontrack_ticket_status_retrieve');
       $ticket_id = $options['ticket_id'];
       $caller_number = $options['caller_number'];
@@ -92,7 +95,7 @@ function ontrackvoip_voice_voipscript_load_script($script_name, $options = NULL)
       if (!$ontrack_phone) {
         //@todo: error message when ontrack phone not recognized
         ontrackvoip_log("Destination number $dest_number not recognized.");
-        $say = (t("Destination number !dest_number not recognized.", array(
+        $say = (v("Destination number !dest_number not recognized.", array(
           '!dest_number' => $dest_number,
         )));
       }
@@ -106,19 +109,22 @@ function ontrackvoip_voice_voipscript_load_script($script_name, $options = NULL)
       $script->addReturn();
       break;
     case 'ontrack_report_issue':
+      voipvoice_set_current_voice('ontrack');
       $script = _ontrackvoip_voice_get_record_script('issue');
       break;
     case 'ontrack_record_story':
+      voipvoice_set_current_voice('ontrack');
       $script = _ontrackvoip_voice_get_record_script('story');
       break;
     case 'ontrack_record_suggestion':
+      voipvoice_set_current_voice('ontrack');
       $script = _ontrackvoip_voice_get_record_script('suggestion');
       break;
     case 'ontrack_play_script':
+      voipvoice_set_current_voice('ontrack');
       //Helper script that provides play menu for Audio blogs.
       $script = new VoipScript('ontrack_play_script');
-      $script->addSetVoice('woman');
-      voipvoice_set_current_voice('woman');
+      //$script->addSetVoice('woman');
 
       $recordings = _ontrackvoip_voice_get_recordings();
       if (!$recordings) {
@@ -172,13 +178,11 @@ function ontrackvoip_voice_voipscript_load_script($script_name, $options = NULL)
 }
 
 function _ontrackvoip_voice_get_record_script($type) {
+  voipvoice_set_current_voice('ontrack');
   $script = new VoipScript('ontrack_record');
   // prepare the call to finish processing the recording even in case of hang up
   $script->addSet('voipscript_hangup_callback', '_ontrackvoip_voice_record_on_hang_up');
   $script->addSet('ontrackvoip_voice_type', $type);
-
-  $script->addSetVoice('woman');
-  voipvoice_set_current_voice('woman');
 
   $script->addLabel('start');
   //@todo: change text

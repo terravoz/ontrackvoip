@@ -1,46 +1,41 @@
 <?php
 
-function ontrack_create_ticket_from_sms($site_id, $ticket_text, $caller_number) {
+function ontrack_create_ticket_from_sms($nid, $ticket_text, $caller_number) {
+  $node = node_load($nid);
+  $extension = field_get_items('node', $node, 'field_extension');
+  $site_id = $extension[0]['value'];
   watchdog('ontrackvoip', "New ticket for site id: $site_id from number: $caller_number text: $ticket_text");
-  $ticket_id = rand(1,1000);
-  return $ticket_id;
+  //$ticket_id = rand(1,1000);
+
+  $ticket->type = 'ontrackticket';
+  $ticket->title = substr($ticket_text, 0, 255);
+  $ticket->uid = 1;
+  $ticket->body[LANGUAGE_NONE][] = array (
+    'value' => $ticket_text,
+  );
+
+  $ticket->field_site_id[LANGUAGE_NONE][0]['nid'] = $nid;
+
+  node_save($ticket);
+  return $ticket->nid;
 }
 
 function ontrack_get_ticket($ticket_id) {
+  $ticket_node = node_load($ticket_id);
   if($ticket_id<1 || $ticket_id > 1000) {
     return NULL;
   }
-  $ticket->title = 'title';
-  $ticket->body[LANGUAGE_NONE][] = array (
-    'value' => 'Hello world ticket.',
-    'format' => filter_default_format($account),
-  );
 
-  $ticket->log = 'Support ticket created from SMS';
-
-  $ticket->uid = 1; // Set uid again because node_object_prepare likes to mess with it.
-
-  $ticket->message_id = time();
-
-  $ticket->state = 1;
-
-  $ticket->priority = 'default';
-
-  $ticket->client = rand(1,1000);
-
-  $ticket->assigned = 'test asignee';
-
-  $ticket->notification = FALSE;
-
-  $ticket->support_email = FALSE;
-
-  $ticket->worldbank_ontrack_act_sup_phone[LANGUAGE_NONE][] = array (
+  $ticket_node->message_id = time();
+  $ticket_node->client = rand(1,1000);
+  $ticket_node->support_email = FALSE;
+  $ticket_node->worldbank_ontrack_act_sup_phone[LANGUAGE_NONE][] = array (
     'value' => '123456789012',
   );
 
-  $site->nid = rand(1,10);
+  $site->nid = $ticket_node->field_site_id[LANGUAGE_NONE][0]['nid'];
   $data = array(
-    'ticket_node' => $ticket,
+    'ticket_node' => $ticket_node,
     'site_node' => $site,
   );
   return $data;
@@ -56,7 +51,24 @@ function ontrack_get_site_id_from_phone($dest_number) {
 }
 
 function ontrack_get_site_list() {
-  for($i=1;$i<=10;$i++) {
+  $query = new EntityFieldQuery();
+  $entities = $query->entityCondition('entity_type', 'node')
+    ->propertyCondition('type', 'ontracksite')
+    ->execute();
+
+  if (!empty($entities['node'])) {
+    foreach($entities['node'] as $node_data) {
+      $node = node_load($node_data->nid);
+      $extension = field_get_items('node', $node, 'field_extension');
+      $sites[$node_data->nid] = array(
+        'id' => $extension[0]['value'],
+        'title' => $node->title,
+        'language' => $node->language,
+      );
+    }
+  }
+
+  /*for($i=1;$i<=10;$i++) {
 
     $sites[$i]['site_id'] = $i;
     if($i>5) {
@@ -68,7 +80,7 @@ function ontrack_get_site_list() {
       $sites[$i]['language'] = 'und';
     }
   }
-
+*/
   return $sites;
 }
 

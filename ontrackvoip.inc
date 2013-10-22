@@ -8,16 +8,19 @@
 class OnTrackSite {
 
   private $site_id;
+  private $nid;
   private $site_name;
   private $site_language;
 
   function __construct($site_id) {
     $this->site_id = $site_id;
+    list($entity_type, $entity) = voipextension_get_entity('field_extension', $site_id);
+    $this->nid = $entity->nid;
     $site_list = ontrack_get_site_list();
-    $this->site_name = isset($site_list[$this->site_id]) ? $site_list[$this->site_id]['title'] : '';
+    $this->site_name = isset($site_list[$this->nid]) ? $site_list[$this->nid]['title'] : '';
 
-    if(isset($site_list[$this->site_id]) && $site_list[$this->site_id]['language'] != 'und') {
-      $this->site_language =  $site_list[$this->site_id]['language'];
+    if(isset($site_list[$this->nid]) && $site_list[$this->nid]['language'] != 'und') {
+      $this->site_language =  $site_list[$this->nid]['language'];
     }
     else {
       $this->site_language = '';
@@ -26,6 +29,10 @@ class OnTrackSite {
 
   function getSiteId() {
     return $this->site_id;
+  }
+
+  function getNid() {
+    return $this->nid;
   }
 
   function getSiteName() {
@@ -43,13 +50,22 @@ class OnTrackPhone {
   private $site_ids;
   private $language;
   private $syntax;
+  private $extension_ids;
 
   function __construct($phone_number, $site_ids, $language, $syntax) {
     $this->phone_number = $phone_number;
-    if(is_array($site_ids)) {
+    $node_ids = is_array($site_ids) ? $site_ids : array($site_ids);
+    /*if(is_array($site_ids)) {
       $site_ids = serialize($site_ids);
+    }*/
+//var_dump($node_ids);die();
+    foreach($node_ids as $nid) {
+      $node = node_load($nid);
+      $extension = field_get_items('node', $node, 'field_extension');
+      $extension_ids[$extension[0]['value']] = $extension[0]['value'];
     }
-    $this->site_ids = $site_ids;
+    $this->extension_ids = $extension_ids;
+    $this->site_ids = serialize($site_ids);
     $this->language = $language;
     $this->syntax = $syntax;
   }
@@ -60,6 +76,10 @@ class OnTrackPhone {
 
   function getSiteIds() {
     return unserialize($this->site_ids);
+  }
+
+  function getExtensionIds() {
+    return $this->extension_ids;
   }
 
   function getLanguage() {
@@ -163,7 +183,7 @@ class OnTrackPhone {
 
     $ontrack_phone = array();
     foreach($result as $row) {
-      $ontrack_phone[] = new OnTrackPhone($row->phone_number, $row->site_ids, $row->language, $row->syntax);
+      $ontrack_phone[] = new OnTrackPhone($row->phone_number, unserialize($row->site_ids), $row->language, $row->syntax);
     }
     return $ontrack_phone;
   }
@@ -184,7 +204,7 @@ class OnTrackPhone {
       ->execute();
 
     foreach($result as $row) {
-      $ontrack_phone = new OnTrackPhone($row->phone_number, $row->site_ids, $row->language, $row->syntax);
+      $ontrack_phone = new OnTrackPhone($row->phone_number, unserialize($row->site_ids), $row->language, $row->syntax);
     }
     return $ontrack_phone;
   }

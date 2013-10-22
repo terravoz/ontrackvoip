@@ -1,0 +1,139 @@
+# $Id$
+#
+# Spanish translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  ontrackvoip.scripts.inc: n/a
+#  ontrackvoip.module: n/a
+#  ontrackvoip.info: n/a
+#  ontrackvoip.install: n/a
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2013-02-19 21:53+0100\n"
+"PO-Revision-Date: 2013-02-19 21:53+0100\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: Spanish <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+#: ontrackvoip.scripts.inc:25
+msgid "SMS from %caller_number on @date (id: %call_id)"
+msgstr ""
+
+#: ontrackvoip.scripts.inc:86
+msgid "To create a new support request, please text the problem description. To get the status of an existing request, please text the number of the request id, ie. 123, 657, 1298, etc."
+msgstr "नयां सहयोगका लागि अनुरोध गर्न कृपया समस्याको विवरण यहां खुलाउनुहोस र यसअघि नै पठाइएको अनुरोधको स्थितिको वारेमा जानकारी लिन कृपया तपाईलाई उपलव्ध गराइएको पहिचान अंक ९जस्तै १२३, ६५७, १२९८ आदी उल्लेख गरी पठाउनुहोस ।"
+
+#: ontrackvoip.scripts.inc:94
+msgid "To create a new support request, please text the site id followed by the actual problem description. To get the status of an existing request, please text the number of the request id, ie. 123, 657, 1298, etc."
+msgstr "नया अनुरोधका लागि कृपया वास्तविक समस्या विवरण खुलाएर साईटको ढेगाना उल्लेख गरी  पठाउनु होस । यसअघि नै पठाइएको अनुरोधको स्थितिको वारेमा जानकारी लिन कृपया तपाईलाई उपलव्ध गराइएको पहिचान अंक जस्तै १२३, ६५७, १२९८ आदि उल्लेख गरी पठाउनुहोस ।"
+
+#: ontrackvoip.scripts.inc:104
+msgid "Empty request."
+msgstr "खाली अनुरोध"
+
+#: ontrackvoip.scripts.inc:137
+msgid "Invalid request id !ticket_id. Please try again with a different one."
+msgstr ""अमान्य अनुरोध कोड नंवर !ticket_id । कृपया फरक अनुरोध कोड नंवर सहित पुन पठाउनुहोस ।"
+
+#: ontrackvoip.scripts.inc:152
+msgid "Request !ticket_id status: !ticket_state."
+msgstr "अनुरोध !ticket_id को स्थिति !ticket_state"
+
+#: ontrackvoip.scripts.inc:163
+msgid "!site_name. You are not authorized to access request !ticket_id. For additional information, please contact the site administrator."
+msgstr "!site_name.  यो अनुरोध !ticket_id का वारेमा जानकारी लिन तपाईलाई अनुमति छैन । थप जानकारीका लागि कृपया साईट प्रवन्धकसंग सम्पर्क गर्नुहोस "
+
+#: ontrackvoip.scripts.inc:210
+msgid "!site_id is not a valid site identifier. Please contact the site administrator for additional information."
+msgstr "!site_id यो मान्य साईट पहिचानक होइन । थप जानकारीका लागि कृपया साईट प्रवन्धकसंग सम्पर्क गर्नुहोस"
+
+#: ontrackvoip.scripts.inc:226
+msgid "Missing site id."
+msgstr "छुटेको साइट पहिचान"
+
+#: ontrackvoip.scripts.inc:246
+msgid "!site_name. New request created with id !ticket_id. Please use that id in further inquiries about this ticket."
+msgstr "!site_name अनुरोध कोड नंवरसहित सिर्जना गरिएको  नयां अनुरोध । यो अनुरोधको वारेमा जानकारी लिनु परेमा कृपया यो अनुरोध कोड नंवर !ticket_id प्रयोग गर्नुहोला"
+
+#: ontrackvoip.module:116
+msgid "Phone number"
+msgstr ""
+
+#: ontrackvoip.module:124
+msgid "Site ID"
+msgstr ""
+
+#: ontrackvoip.module:135
+msgid "Phone Number Language"
+msgstr ""
+
+#: ontrackvoip.module:144
+msgid "SMS Syntax"
+msgstr ""
+
+#: ontrackvoip.module:146
+msgid "use embedded site id in SMS ticket creation requests"
+msgstr ""
+
+#: ontrackvoip.module:147
+msgid "retrieve site id based on the site telephone number"
+msgstr ""
+
+#: ontrackvoip.module:158
+msgid "Add More"
+msgstr ""
+
+#: ontrackvoip.module:169
+msgid "Save"
+msgstr ""
+
+#: ontrackvoip.module:174
+msgid "Cleanup"
+msgstr ""
+
+#: ontrackvoip.module:197
+msgid "You must enter both phone number and site id."
+msgstr ""
+
+#: ontrackvoip.module:203
+msgid "Phone number must be unique."
+msgstr ""
+
+#: ontrackvoip.module:211
+msgid "Retrieve SMS syntax can't be used when phone number is used with multiple site ids."
+msgstr ""
+
+#: ontrackvoip.module:246
+msgid "OnTrack VoIP configuration form is reset."
+msgstr ""
+
+#: ontrackvoip.module:20;27 ontrackvoip.info:0
+msgid "OnTrack VoIP"
+msgstr ""
+
+#: ontrackvoip.module:21
+msgid "OnTrack VoIP settings"
+msgstr ""
+
+#: ontrackvoip.module:28
+msgid "OnTrack VoIP settings."
+msgstr ""
+
+#: ontrackvoip.install:71
+msgid "OnTrackVoIP Update 7101 ran successfully."
+msgstr ""
+
+#: ontrackvoip.info:0
+msgid "OnTrack VoIP Drupal integration"
+msgstr ""
+
+#: ontrackvoip.info:0
+msgid "VoIP Drupal"
+msgstr ""
+

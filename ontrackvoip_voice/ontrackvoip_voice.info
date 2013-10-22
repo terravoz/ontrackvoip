@@ -12,6 +12,7 @@ dependencies[] = list
 dependencies[] = node
 dependencies[] = options
 dependencies[] = ontrackvoip
+dependencies[] = voipvoice
 features[features_api][] = api:1
 features[field][] = node-ontrack_voice-field_ontrackvoice_audio
 features[field][] = node-ontrack_voice-field_ontrackvoice_type

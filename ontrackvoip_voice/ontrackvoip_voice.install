@@ -1,0 +1,43 @@
+<?php
+/**@file
+ * Implementation of hook_install().
+ */
+function ontrackvoip_voice_install() {
+  //Create ontrack_lexicon lexicon
+  $lexicon = array(
+   'lexicon' => 'ontrack_lexicon',
+   'description' => 'this is ontrackvoip_voice VoIP Voice lexicon',
+  );
+  voipvoice_create_lexicon($lexicon);
+
+  //Create ontrack_voice voices
+  $voice1 = array(
+   'name' => 'ontrack',
+   'gender' => 'man',
+   'description' => 'This is man English ontrack voice.',
+   'language' => 'en',
+   'lexicon' => 'ontrack_lexicon',
+  );
+  voipvoice_create_voice($voice1);
+
+  $voice2 = array(
+   'name' => 'ontrack-spanish',
+   'gender' => 'man',
+   'description' => 'This is man Spanish ontrack voice.',
+   'language' => 'es',
+   'lexicon' => 'ontrack_lexicon',
+  );
+  voipvoice_create_voice($voice2);
+
+  drupal_set_message('You have to enable following languages: "Spanish"');
+
+  //Make sure that mp3 is enabled
+  //variable_set('voipvoice_allowed_extensions', array('wav' => 'wav', 'mp3' => 'mp3'));
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function ontrackvoip_voice_uninstall() {
+  voipvoice_delete_lexicon('ontrack_lexicon');
+}
