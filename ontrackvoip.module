@@ -343,4 +343,53 @@ function ontrack_mb_wordwrap($str, $width=74, $break="\r\n")
   return $return;
 }
 
+function ontrackvoip_add_extension($field_name, $content_type) {
+  // Check if our field is not already created.
+  if (!field_info_field($field_name)) {
 
+    // Create the field base.
+    $field = array(
+      'field_name' => $field_name,
+      'type' => 'voipextension',
+      'settings' => array(
+        'auto' => '0',
+        'max_length' => '5',
+      ),
+    );
+    field_create_field($field);
+  }
+    // Create the field instance on the bundle.
+    $instance = array(
+      'field_name' => $field_name,
+      'entity_type' => 'node',
+      'label' => 'Site extension',
+      'bundle' => $content_type,
+      // If you don't set the "required" property then the field wont be required by default.
+      'required' => FALSE,
+      'settings' => array(
+        'auto' => '0',
+        'max_length' => '5',
+      ),
+      'widget' => array(
+        'module' => 'voipextension',
+        'settings' => array('auto' => '0'),
+        'type' => 'voipextension',
+      ),
+    );
+    field_create_instance($instance);
+
+}
+
+function ontrackvoip_sites_to_extensions() {
+  $site_list = ontrack_get_site_list();
+  $updated++;
+  foreach($site_list as $nid => $site) {
+    $node = node_load($nid);
+    $node->field_extension['und'][0]['value'] = $nid;
+    $node->field_extension['und'][0]['enabled'] = '1';
+    $node->field_extension['und'][0]['script'] = '';
+    node_save($node);
+    $updated++;
+  }
+  watchdog('ontrackvoip', $updated. ' sites migrated');
+}

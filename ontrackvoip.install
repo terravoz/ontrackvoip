@@ -70,3 +70,12 @@ function ontrackvoip_update_7101() {
   db_create_table('ontrack_sites', $schema['ontrack_sites']);
   return t('OnTrackVoIP Update 7101 ran successfully.');
 }
+
+/**
+ * Create field_extension for Ontrack Country Project Activity content type
+ * Migrate site ids to VoIP extension field
+ */
+function ontrackvoip_update_7102() {
+  ontrackvoip_add_extension('field_extension', 'worldbank-ontrack-act');
+  ontrackvoip_sites_to_extensions();
+}
